@@ -36,7 +36,39 @@ body {
   background-color: #5cb85c;
   border-color: #4cae4c;
 }
+
+/* --- HIER FÜGEN SIE DAS NEUE CSS HINZU --- */
+details summary {
+  display: inline-block;
+  cursor: pointer;
+  background-color: #008cba; /* Button-Hintergrund */
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  font-weight: bold;
+  user-select: none;
+  outline: none;
+  border: 1px solid #007c9a;
+}
+
+details summary::-webkit-details-marker {
+  display: none; /* Standard-Pfeil entfernen */
+}
+
+details summary::after {
+  content: ' ▼';
+  font-size: 0.9em;
+  margin-left: 5px;
+}
+details[open] summary::after {
+  content: ' ▲';
+}
+details[open] summary {
+  background-color: #0079a5;
+}
 "
+
 
 ############################################################################
 # 1) GLOBALE FUNKTIONEN FÜR XLSX-LADE-/SPEICHERPROZESSE
@@ -283,7 +315,7 @@ ui <- navbarPage(
   tabPanel("Übersetzen",
            fluidRow(
              column(
-               width = 4,
+               width = 3,
                wellPanel(
                  h4("Einstellungen & Eingabe"),
                  uiOutput("settingsDropdownUI"),  # Dynamisches SelectInput für Settings
@@ -610,7 +642,7 @@ server <- function(input, output, session){
     chosen <- input$lang_in
     rest   <- allch[allch != chosen]
     # Default: nimm 'en' und 'fr' falls möglich
-    defv   <- c("en","fr")
+    defv   <- c("en")
     defv2  <- defv[defv %in% rest]
     checkboxGroupInput("target_langs", "Zielsprachen:",
                        choices = rest, selected = defv2, inline = TRUE)
