@@ -1,0 +1,38 @@
+customCSS <- "
+/* Bestehendes CSS ... */
+
+details summary {
+  /* Damit der <summary>-Text wie ein Button aussieht */
+  display: inline-block;       /* oder block; je nach Wunsch */
+  cursor: pointer;
+  background-color: #008cba;   /* Button-Hintergrund */
+  color: #fff;                 /* Button-Textfarbe */
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 5px;
+  font-weight: bold;
+  user-select: none;           /* Kein Markieren des Textes beim Klicken */
+  outline: none;               /* Entfernt Fokusrahmen in manchen Browsern */
+  border: 1px solid #007c9a;   /* Passend zum Hintergrund */
+}
+
+/* Standard-Pfeil entfernen (Chrome, Safari) */
+details summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Kleiner Pfeil oder Symbol manuell hinzufügen */
+details summary::after {
+  content: ' ▼';   /* Symbol für 'aufklappen' */
+  font-size: 0.9em;
+  margin-left: 5px;
+}
+details[open] summary::after {
+  content: ' ▲';   /* Symbol für 'zuklappen' */
+}
+
+/* Optional: Farbe ändern, wenn geöffnet */
+details[open] summary {
+  background-color: #0079a5;
+}
+"
