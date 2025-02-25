@@ -1,10 +1,8 @@
 ############################################################################
 # app.R
-# Beispiel-Shiny-App für dynamische Settings + Google-Translate + Quiz-Log
-# mit Archivierung und Löschfunktion für Settings.
+# Shiny-App: Dynamische Settings, Google-Translate, Quiz-Log, Archivierung
 ############################################################################
 
-# Pakete laden (bitte sicherstellen, dass sie installiert sind)
 library(shiny)
 library(shinythemes)
 library(httr)
@@ -15,11 +13,10 @@ library(stringr)
 library(ggplot2)
 
 # -- BITTE ANPASSEN: Dein Google-API-Key --
-API_KEY <- "ABCD1234-...-XYZ"
+API_KEY <- "AIzaSyDR3-F8HnlRYBSjgAISHxR5VjYrKMlNuxY"
 
-# Einfaches Custom-CSS für optische Anpassungen
+# Custom-CSS
 customCSS <- "
-/* Einfaches CSS-Beispiel für optische Anpassungen */
 body {
   font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 }
@@ -36,12 +33,11 @@ body {
   background-color: #5cb85c;
   border-color: #4cae4c;
 }
-
-/* --- CSS für <details>/<summary> => Button-Styling */
+/* <details>/<summary> => Button-Styling */
 details summary {
   display: inline-block;
   cursor: pointer;
-  background-color: #008cba; /* Button-Hintergrund */
+  background-color: #008cba; 
   color: #fff;
   padding: 8px 12px;
   border-radius: 4px;
@@ -52,7 +48,7 @@ details summary {
   border: 1px solid #007c9a;
 }
 details summary::-webkit-details-marker {
-  display: none; /* Standard-Pfeil entfernen */
+  display: none;
 }
 details summary::after {
   content: ' ▼';
@@ -68,7 +64,7 @@ details[open] summary {
 "
 
 ############################################################################
-# 1) GLOBALE FUNKTIONEN FÜR XLSX-LADE-/SPEICHERPROZESSE
+# 1) GLOBALE FUNKTIONEN
 ############################################################################
 
 settings_index_path <- "settings_index.xlsx"
@@ -84,17 +80,16 @@ loadSettingsIndex <- function(){
     return(df)
   } else {
     df <- openxlsx::read.xlsx(settings_index_path, sheet = 1)
-    needed <- c("SettingName", "FilePath", "Archived")
+    needed <- c("SettingName","FilePath","Archived")
     for(nc in needed){
       if(!nc %in% names(df)) df[[nc]] <- NA
     }
     df <- df[, needed, drop = FALSE]
-    return(df)
+    df
   }
 }
-
 saveSettingsIndex <- function(df){
-  needed <- c("SettingName", "FilePath", "Archived")
+  needed <- c("SettingName","FilePath","Archived")
   for(nc in needed){
     if(!nc %in% names(df)) df[[nc]] <- NA
   }
@@ -105,9 +100,6 @@ saveSettingsIndex <- function(df){
   saveWorkbook(wb, settings_index_path, overwrite = TRUE)
 }
 
-# -------------------------------------------------------------------------
-# B) Funktion, um das eigentliche Setting-Excel zu laden/speichern
-# -------------------------------------------------------------------------
 loadSettingData <- function(settingName){
   si <- loadSettingsIndex()
   rowMatch <- si[si$SettingName == settingName & si$Archived == FALSE, ]
@@ -142,17 +134,15 @@ loadSettingData <- function(settingName){
       if(!nc %in% names(df)) df[[nc]] <- NA_character_
     }
     df <- df[, needed, drop = FALSE]
-    return(df)
+    df
   }
 }
-
 saveSettingData <- function(df, settingName){
   si <- loadSettingsIndex()
   rowMatch <- si[si$SettingName == settingName, ]
   if(nrow(rowMatch) == 0) return(NULL)
   
   path <- rowMatch$FilePath[1]
-  
   needed <- c("Zeitstempel","Sprache","Original","Uebersetzung","Wortkategorie","Bemerkungen")
   for(nc in needed){
     if(!nc %in% names(df)) df[[nc]] <- NA_character_
@@ -165,9 +155,6 @@ saveSettingData <- function(df, settingName){
   saveWorkbook(wb, path, overwrite = TRUE)
 }
 
-# -------------------------------------------------------------------------
-# C) my_querys.xlsx => alle Übersetzungen
-# -------------------------------------------------------------------------
 path_queries <- "my_querys.xlsx"
 
 load_querys <- function(){
@@ -180,7 +167,7 @@ load_querys <- function(){
       stringsAsFactors = FALSE
     )
   } else {
-    df <- openxlsx::read.xlsx(xlsxFile = path_queries, sheet = 1)
+    df <- openxlsx::read.xlsx(path_queries, sheet = 1)
     needed <- c("Zeitstempel","Sprache","Original","Uebersetzung")
     for(nc in needed){
       if(!nc %in% names(df)) df[[nc]] <- NA_character_
@@ -189,7 +176,6 @@ load_querys <- function(){
     df
   }
 }
-
 save_querys <- function(df){
   needed <- c("Zeitstempel","Sprache","Original","Uebersetzung")
   for(nc in needed){
@@ -202,9 +188,6 @@ save_querys <- function(df){
   saveWorkbook(wb, path_queries, overwrite = TRUE)
 }
 
-# -------------------------------------------------------------------------
-# D) Quiz-Log + Session-History
-# -------------------------------------------------------------------------
 quiz_log_path        <- "my_quizlog.xlsx"
 session_history_path <- "my_session_history.xlsx"
 
@@ -222,7 +205,7 @@ load_quiz_data <- function(){
       stringsAsFactors    = FALSE
     )
   } else {
-    df <- openxlsx::read.xlsx(xlsxFile = quiz_log_path, sheet = 1)
+    df <- openxlsx::read.xlsx(quiz_log_path, sheet = 1)
     needed <- c("Zeitstempel","Abfragerichtung","Abfragewort",
                 "RichtigeUebersetzung","MeineUebersetzung",
                 "Ergebnis","Setting","SettingNiveau")
@@ -233,7 +216,6 @@ load_quiz_data <- function(){
     df
   }
 }
-
 save_quiz_data <- function(df){
   needed <- c("Zeitstempel","Abfragerichtung","Abfragewort",
               "RichtigeUebersetzung","MeineUebersetzung",
@@ -242,6 +224,7 @@ save_quiz_data <- function(df){
     if(!nc %in% names(df)) df[[nc]] <- NA_character_
   }
   df <- df[, needed, drop = FALSE]
+  
   wb <- createWorkbook()
   addWorksheet(wb, "Sheet1")
   writeData(wb, "Sheet1", df)
@@ -266,7 +249,7 @@ load_session_history <- function(){
       stringsAsFactors = FALSE
     )
   } else {
-    df <- openxlsx::read.xlsx(xlsxFile = session_history_path, sheet = 1)
+    df <- openxlsx::read.xlsx(session_history_path, sheet = 1)
     needed <- c("SessionID","Startzeit","Endzeit","Dauer","Anzahl",
                 "Richtig","Falsch","QuoteRichtig","QuoteFalsch","Setting",
                 "DetailRichtig","DetailFalsch")
@@ -277,7 +260,6 @@ load_session_history <- function(){
     df
   }
 }
-
 save_session_history <- function(df){
   needed <- c("SessionID","Startzeit","Endzeit","Dauer","Anzahl",
               "Richtig","Falsch","QuoteRichtig","QuoteFalsch","Setting",
@@ -286,6 +268,7 @@ save_session_history <- function(df){
     if(!nc %in% names(df)) df[[nc]] <- NA_character_
   }
   df <- df[, needed, drop = FALSE]
+  
   wb <- createWorkbook()
   addWorksheet(wb, "Sheet1")
   writeData(wb, "Sheet1", df)
@@ -293,15 +276,13 @@ save_session_history <- function(df){
 }
 
 ############################################################################
-# 2) UI: Statt navbarPage => eigene Buttons + verstecktes TabsetPanel
+# 2) UI
 ############################################################################
 
 ui <- fluidPage(
   theme = shinytheme("flatly"),
-  # Kopfzeile mit Custom-CSS
   tags$head(tags$style(HTML(customCSS))),
   
-  # Zeile mit Buttons für "Übersetzen", "Quiz-Log", "Settings verwalten"
   fluidRow(
     column(12,
            div(
@@ -313,11 +294,10 @@ ui <- fluidPage(
     )
   ),
   
-  # Verstecktes TabsetPanel (type="hidden") => wir navigieren per actionButton
   tabsetPanel(
     id = "mainTabs", type = "hidden",
     
-    # ================ TAB 1: Übersetzen / Hauptbereich ================
+    # TAB 1: ÜBERSSETZEN
     tabPanel("translateTab",
              fluidRow(
                column(
@@ -330,36 +310,50 @@ ui <- fluidPage(
                                choices = c("Deutsch" = "de", "Englisch" = "en",
                                            "Französisch" = "fr", "Spanisch" = "es",
                                            "Italienisch" = "it"),
-                               selected = "de"),
+                               selected = "de"
+                   ),
                    textAreaInput("text_in", "Zu übersetzender Text:",
                                  "Hallo", width = "100%", height = "100px"),
-                   # Option "Ganze Textblöcke" ist evtl. nicht so oft nötig, aber wir lassen sie drin:
+                   
                    radioButtons("translate_mode", "Übersetzungsmodus:",
-                                choices = c("Pro Zeile" = "linewise",
-                                            "Ganze Textblöcke" = "block"),
-                                selected = "linewise"),
+                                choices = c("Pro Zeile" = "linewise", "Ganze Textblöcke" = "block"),
+                                selected = "linewise"
+                   ),
+                   
+                   # Zielsprachen
                    uiOutput("targetLangUI"),
+                   
                    actionButton("go", "Übersetzen", class = "btn-primary"),
                    br(), br(),
-                   actionButton("saveExcel", "Ergebnis in gewähltes Setting speichern",
-                                class = "btn-success"),
-                   br(), br(),
-                   strong("Buchstaben-Filter"),
-                   # Wahl, ob wir "Original" oder "Übersetzung" filtern:
-                   radioButtons("filterByCol", "Filter anwenden auf:",
-                                choices = c("Original", "Uebersetzung"),
-                                selected = "Original", inline = TRUE),
                    
+                   # NEU: Wortkategorie, die für die aktuelle Übersetzung eingetragen wird
+                   selectInput("wordCategory", "Wortkategorie:",
+                               choices = c("Unbekannt", "Alltag", "Business", "Technik", "Sonstiges"),
+                               selected = "Unbekannt"
+                   ),
+                   
+                   actionButton("saveExcel", "Ergebnis in gewähltes Setting speichern", class = "btn-success"),
+                   br(), br(),
+                   
+                   strong("Buchstaben-Filter"),
+                   radioButtons("filterByCol", "Filter anwenden auf:",
+                                choices = c("Original", "Uebersetzung"), selected = "Original", inline = TRUE
+                   ),
                    checkboxGroupInput("letters_row0", "Zeile 0 (Alle):",
-                                      choices = c("Alle"), selected = "Alle", inline = TRUE),
+                                      choices = c("Alle"), selected = "Alle", inline = TRUE
+                   ),
                    checkboxGroupInput("letters_row1", "Zeile 1 (A-H):",
-                                      choices = c("A","B","C","D","E","F","G","H"), inline = TRUE),
+                                      choices = c("A","B","C","D","E","F","G","H"), inline = TRUE
+                   ),
                    checkboxGroupInput("letters_row2", "Zeile 2 (I-Q):",
-                                      choices = c("I","J","K","L","M","N","O","P","Q"), inline = TRUE),
+                                      choices = c("I","J","K","L","M","N","O","P","Q"), inline = TRUE
+                   ),
                    checkboxGroupInput("letters_row3", "Zeile 3 (R-Z):",
-                                      choices = c("R","S","T","U","V","W","X","Y","Z"), inline = TRUE),
+                                      choices = c("R","S","T","U","V","W","X","Y","Z"), inline = TRUE
+                   ),
                    checkboxGroupInput("letters_row4", "Zeile 4 (Umlaute):",
-                                      choices = c("Ä","Ö","Ü"), inline = TRUE),
+                                      choices = c("Ä","Ö","Ü"), inline = TRUE
+                   ),
                    
                    uiOutput("langFilterUI")
                  )
@@ -381,6 +375,7 @@ ui <- fluidPage(
                      )
                    ),
                    br(),
+                   # Queries-Table => editable
                    DTOutput("myQueriesDT"),
                    br(),
                    h4("Gefundene Duplikate (Original == Übersetzung):"),
@@ -427,7 +422,6 @@ ui <- fluidPage(
                        tableOutput("quizStats"),
                        br(),
                        h4("Historie Abfragesession"),
-                       # Neuer Button zum Löschen
                        fluidRow(
                          column(12, actionButton("delSessionHist", "Markierte Zeilen löschen (Historie)", class="btn-warning"))
                        ),
@@ -440,7 +434,7 @@ ui <- fluidPage(
              )
     ),
     
-    # ================ TAB 2: QUIZ-LOG ================
+    # TAB 2: QUIZ-LOG
     tabPanel("quizLogTab",
              fluidPage(
                wellPanel(
@@ -458,7 +452,7 @@ ui <- fluidPage(
              )
     ),
     
-    # ================ TAB 3: Settings verwalten ================
+    # TAB 3: Settings verwalten
     tabPanel("settingsTab",
              fluidPage(
                h3("Dynamische Settings-Übersicht"),
@@ -486,7 +480,7 @@ ui <- fluidPage(
 
 server <- function(input, output, session){
   
-  # -- Buttons => Tabwechsel -----------------------------------------------
+  # Tabs => Navigation per Button
   observeEvent(input$btnGoTranslate, {
     updateTabsetPanel(session, "mainTabs", selected = "translateTab")
   })
@@ -496,17 +490,15 @@ server <- function(input, output, session){
   observeEvent(input$btnGoSettings, {
     updateTabsetPanel(session, "mainTabs", selected = "settingsTab")
   })
-  # Default: Start mit "translateTab"
+  # Standard-Tab
   observe({
     updateTabsetPanel(session, "mainTabs", selected = "translateTab")
-  },)
+  })
   
-  # ------------------------------------------------------------------------
   # REACTIVE VALUES
-  # ------------------------------------------------------------------------
   settingsIndexRV  <- reactiveVal(loadSettingsIndex())
-  currentData      <- reactiveVal(data.frame())  # für "Aktuelle Übersetzung"
-  storedData       <- reactiveVal(data.frame())  # für Daten aus dem gewählten Setting
+  currentData      <- reactiveVal(data.frame())
+  storedData       <- reactiveVal(data.frame())
   
   queryDataRV      <- reactiveVal(load_querys())
   myQueriesDuplicatesRV <- reactiveVal(data.frame())
@@ -519,21 +511,21 @@ server <- function(input, output, session){
   quizSessionStart <- reactiveVal(NULL)
   quizStageRV      <- reactiveVal(FALSE)
   
-  # ------------------------------------------------------------------------
+  # -----------------------------
   # UI: Settings-Dropdown
-  # ------------------------------------------------------------------------
+  # -----------------------------
   output$settingsDropdownUI <- renderUI({
     si <- settingsIndexRV()
     si_active <- si[si$Archived == FALSE, ]
     if(nrow(si_active) == 0){
-      tagList(p("Noch keine Settings vorhanden oder alle archiviert."))
+      p("Noch keine Settings vorhanden oder alle archiviert.")
     } else {
       selectInput("which_setting", "Setting wählen:",
                   choices = si_active$SettingName,
-                  selected = si_active$SettingName[1])
+                  selected = si_active$SettingName[1]
+      )
     }
   })
-  
   observeEvent(list(settingsIndexRV(), input$which_setting), {
     req(input$which_setting)
     df <- loadSettingData(input$which_setting)
@@ -543,27 +535,25 @@ server <- function(input, output, session){
     }
   }, ignoreNULL = TRUE)
   
-  # ------------------------------------------------------------------------
+  # -----------------------------
   # Settings-Verwaltung
-  # ------------------------------------------------------------------------
+  # -----------------------------
   output$settingsIndexDT <- renderDT({
     df <- settingsIndexRV()
-    datatable(df,
-              selection = "single",
-              options = list(pageLength = 5, scrollX = TRUE, autoWidth = TRUE,
-                             columnDefs = list(list(width = 'auto', targets = "_all")))
+    datatable(df, selection = "single",
+              options = list(pageLength = 5, scrollX = TRUE, autoWidth = TRUE)
     )
   })
   
   observeEvent(input$createSettingBtn, {
     newName <- trimws(input$newSettingName)
-    if(nchar(newName) == 0){
-      showNotification("Bitte einen Namen für das neue Setting eingeben!", type = "warning")
+    if(nchar(newName)==0){
+      showNotification("Bitte einen Namen eingeben!", type="warning")
       return(NULL)
     }
     si <- settingsIndexRV()
     if(any(si$SettingName == newName)){
-      showNotification("SettingName existiert bereits!", type = "error")
+      showNotification("SettingName existiert bereits!", type="error")
       return(NULL)
     }
     safeName <- gsub("[^a-zA-Z0-9_-]", "_", newName)
@@ -576,7 +566,7 @@ server <- function(input, output, session){
       Uebersetzung  = character(),
       Wortkategorie = character(),
       Bemerkungen   = character(),
-      stringsAsFactors = FALSE
+      stringsAsFactors=FALSE
     )
     saveSettingData(df_empty, newName)
     
@@ -584,28 +574,27 @@ server <- function(input, output, session){
       SettingName = newName,
       FilePath    = filePath,
       Archived    = FALSE,
-      stringsAsFactors = FALSE
+      stringsAsFactors=FALSE
     )
     si_new <- rbind(si, newRow)
     saveSettingsIndex(si_new)
     settingsIndexRV(si_new)
-    
-    showNotification(paste("Neues Setting angelegt:", newName), type = "message")
-    updateTextInput(session, "newSettingName", value = "")
-  }, ignoreInit = TRUE)
+    showNotification(paste("Neues Setting angelegt:", newName), type="message")
+    updateTextInput(session, "newSettingName", value="")
+  })
   
   deleteSettingFile <- function(settingName){
     si <- settingsIndexRV()
     rowMatch <- si[si$SettingName == settingName, ]
-    if(nrow(rowMatch) == 0) return(NULL)
+    if(nrow(rowMatch)==0) return(NULL)
     path <- rowMatch$FilePath[1]
     if(file.exists(path)) file.remove(path)
   }
   
   observeEvent(input$archiveSettingBtn, {
     sel <- input$settingsIndexDT_rows_selected
-    if(length(sel) == 0){
-      showNotification("Kein Setting in der Tabelle markiert!", type = "warning")
+    if(length(sel)==0){
+      showNotification("Kein Setting markiert!", type="warning")
       return(NULL)
     }
     si <- settingsIndexRV()
@@ -613,30 +602,28 @@ server <- function(input, output, session){
     si$Archived[si$SettingName == selName] <- TRUE
     saveSettingsIndex(si)
     settingsIndexRV(si)
-    showNotification(paste("Setting archiviert:", selName), type = "message")
+    showNotification(paste("Setting archiviert:", selName), type="message")
   })
   
   observeEvent(input$deleteSettingBtn, {
     sel <- input$settingsIndexDT_rows_selected
-    if(length(sel) == 0){
-      showNotification("Kein Setting in der Tabelle markiert!", type = "warning")
+    if(length(sel)==0){
+      showNotification("Kein Setting markiert!", type="warning")
       return(NULL)
     }
     si <- settingsIndexRV()
     selName <- si$SettingName[sel]
-    
     showModal(
       modalDialog(
         title = "Löschen bestätigen",
-        paste("Möchtest du das Setting wirklich löschen? (", selName, ")"),
+        paste("Setting wirklich löschen? (", selName, ")"),
         footer = tagList(
           modalButton("Abbrechen"),
-          actionButton("confirmDeleteSetting", "Ja, löschen", class = "btn-danger")
+          actionButton("confirmDeleteSetting", "Ja, löschen", class="btn-danger")
         )
       )
     )
   })
-  
   observeEvent(input$confirmDeleteSetting, {
     removeModal()
     sel <- input$settingsIndexDT_rows_selected
@@ -647,51 +634,57 @@ server <- function(input, output, session){
     saveSettingsIndex(si)
     settingsIndexRV(si)
     deleteSettingFile(selName)
-    showNotification(paste("Setting gelöscht:", selName), type = "error")
+    showNotification(paste("Setting gelöscht:", selName), type="error")
   })
   
-  # ------------------------------------------------------------------------
-  # Übersetzen (Google API) => currentData + my_querys
-  # ------------------------------------------------------------------------
-  output$tbl_current <- renderTable({
-    currentData()
+  # -----------------------------
+  # Zielsprachen: UI
+  # -----------------------------
+  output$targetLangUI <- renderUI({
+    allch <- c("Deutsch"="de","Englisch"="en","Französisch"="fr","Spanisch"="es","Italienisch"="it")
+    chosen <- input$lang_in
+    # Alle außer gewählter Eingabesprache
+    rest   <- allch[allch != chosen]
+    # Default: en, fr
+    defv   <- c("en","fr")
+    defv2  <- defv[defv %in% rest]
+    
+    checkboxGroupInput("target_langs", "Zielsprachen:",
+                       choices = rest, selected = defv2, inline = TRUE
+    )
   })
   
+  # -----------------------------
+  # Übersetzen => currentData
+  # -----------------------------
   observeEvent(input$go, {
-    if(is.null(input$which_setting)){
-      showNotification("Kein Setting ausgewählt!", type = "warning")
-      currentData(data.frame())
-      return(NULL)
-    }
+    req(input$which_setting)
     lines_in <- strsplit(input$text_in, "\n")[[1]]
     lines_in <- lines_in[lines_in != ""]
     if(length(lines_in)==0){
-      showNotification("Keine Eingabezeilen!", type = "warning")
+      showNotification("Keine Eingabezeilen!", type="warning")
       currentData(data.frame())
       return(NULL)
     }
     src <- input$lang_in
     tg  <- setdiff(input$target_langs, src)
     if(length(tg)==0){
-      showNotification("Keine Zielsprache gewählt!", type = "warning")
+      showNotification("Keine Zielsprache gewählt!", type="warning")
       currentData(data.frame())
       return(NULL)
     }
-    
-    mode <- input$translate_mode
     base_url <- paste0("https://translation.googleapis.com/language/translate/v2?key=", API_KEY)
     
     bigList <- list()
-    if(mode=="linewise"){
+    if(input$translate_mode=="linewise"){
       for(ln in lines_in){
         for(tlang in tg){
-          resp <- httr::POST(url = base_url,
-                             body = list(q = ln, source = src, target = tlang, format = "text"),
-                             encode = "json")
-          cont <- httr::content(resp, as = "text", encoding = "UTF-8")
+          resp <- httr::POST(url=base_url,
+                             body = list(q=ln, source=src, target=tlang, format="text"), encode="json")
+          cont <- httr::content(resp, as="text", encoding="UTF-8")
           js <- fromJSON(cont)
           if(!is.null(js$error)){
-            showNotification(paste("API-Fehler:", js$error$message), type = "error")
+            showNotification(paste("API-Fehler:", js$error$message), type="error")
             currentData(data.frame())
             return(NULL)
           }
@@ -699,27 +692,26 @@ server <- function(input, output, session){
           
           rowdf <- data.frame(
             Zeitstempel   = format(Sys.time(), "%d.%m.%Y_%H.%M.%S"),
-            Sprache       = paste0(src, " - ", tlang),
+            Sprache       = paste0(src," - ",tlang),
             Original      = ln,
             Uebersetzung  = trText,
-            Wortkategorie = "Unbekannt",
+            Wortkategorie = input$wordCategory,  # vom neuen SelectInput
             Bemerkungen   = "",
-            stringsAsFactors = FALSE
+            stringsAsFactors=FALSE
           )
-          bigList[[length(bigList) + 1]] <- rowdf
+          bigList[[length(bigList)+1]] <- rowdf
         }
       }
     } else {
       # Ganze Textblöcke
-      block_txt <- paste(lines_in, collapse = "\n")
+      block_txt <- paste(lines_in, collapse="\n")
       for(tlang in tg){
-        resp <- httr::POST(url = base_url,
-                           body = list(q = block_txt, source = src, target = tlang, format = "text"),
-                           encode = "json")
-        cont <- httr::content(resp, as = "text", encoding = "UTF-8")
+        resp <- httr::POST(url=base_url,
+                           body=list(q=block_txt, source=src, target=tlang, format="text"), encode="json")
+        cont <- httr::content(resp, as="text", encoding="UTF-8")
         js <- fromJSON(cont)
         if(!is.null(js$error)){
-          showNotification(paste("API-Fehler:", js$error$message), type = "error")
+          showNotification(paste("API-Fehler:", js$error$message), type="error")
           currentData(data.frame())
           return(NULL)
         }
@@ -727,173 +719,148 @@ server <- function(input, output, session){
         
         rowdf <- data.frame(
           Zeitstempel   = format(Sys.time(), "%d.%m.%Y_%H.%M.%S"),
-          Sprache       = paste0(src, " - ", tlang),
+          Sprache       = paste0(src," - ",tlang),
           Original      = block_txt,
           Uebersetzung  = trText,
-          Wortkategorie = "",
+          Wortkategorie = input$wordCategory,  # vom neuen SelectInput
           Bemerkungen   = "",
-          stringsAsFactors = FALSE
+          stringsAsFactors=FALSE
         )
-        bigList[[length(bigList) + 1]] <- rowdf
+        bigList[[length(bigList)+1]] <- rowdf
       }
     }
     df_out <- do.call(rbind, bigList)
     
-    # 1) Überspringe Zeilen, in denen Original und Übersetzung identisch sind
+    # Filter identische
     dup_self <- tolower(trimws(df_out$Original)) == tolower(trimws(df_out$Uebersetzung))
     if(any(dup_self)){
       showNotification(paste(sum(dup_self),
-                             "Zeile(n) identisch (Original == Übersetzung) => werden ignoriert."),
-                       type = "warning")
-      df_out <- df_out[!dup_self, ]
+                             "Zeile(n) identisch => ignoriert."), type="warning")
+      df_out <- df_out[!dup_self,]
     }
     
-    # 2) Neue Einträge -> in my_querys.xlsx
-    if(nrow(df_out) > 0){
+    # my_querys
+    if(nrow(df_out)>0){
       oldQ <- queryDataRV()
       combo_old <- paste(tolower(oldQ$Sprache), tolower(oldQ$Original), tolower(oldQ$Uebersetzung))
       combo_new <- paste(tolower(df_out$Sprache), tolower(df_out$Original), tolower(df_out$Uebersetzung))
       isdup_q   <- combo_new %in% combo_old
       if(any(isdup_q)){
         showNotification(paste(sum(isdup_q),
-                               "Zeile(n) bereits in my_querys => werden nicht erneut gespeichert."),
-                         type = "warning")
+                               "Zeile(n) bereits in my_querys => nicht erneut gespeichert."), type="warning")
       }
       df_qnew <- df_out[!isdup_q, c("Zeitstempel","Sprache","Original","Uebersetzung")]
-      if(nrow(df_qnew) > 0){
+      if(nrow(df_qnew)>0){
         appendedQ <- rbind(oldQ, df_qnew)
         save_querys(appendedQ)
         queryDataRV(appendedQ)
-        showNotification(paste(nrow(df_qnew), "Zeilen neu in my_querys.xlsx gespeichert."),
-                         type = "message")
+        showNotification(paste(nrow(df_qnew), "Zeilen neu in my_querys.xlsx gespeichert."), type="message")
       }
     }
     currentData(df_out)
   })
   
-  # ------------------------------------------------------------------------
-  # "Ergebnis in gewähltes Setting speichern"
-  # ------------------------------------------------------------------------
+  # Ergebnis in gewähltes Setting speichern
   observeEvent(input$saveExcel, {
     req(input$which_setting)
     df_tr <- currentData()
     if(nrow(df_tr)==0){
-      showNotification("Keine Zeilen zum Speichern!", type = "warning")
+      showNotification("Keine Zeilen zum Speichern!", type="warning")
       return(NULL)
     }
     old_stored <- storedData()
-    
     combo_old <- paste(tolower(old_stored$Original), tolower(old_stored$Uebersetzung))
     combo_new <- paste(tolower(df_tr$Original), tolower(df_tr$Uebersetzung))
     isdup_s   <- combo_new %in% combo_old
     if(any(isdup_s)){
-      showNotification(paste(sum(isdup_s),
-                             "Zeile(n) bereits im Setting vorhanden => werden ignoriert."),
-                       type = "warning")
+      showNotification(paste(sum(isdup_s), "Zeile(n) bereits im Setting => ignoriert."), type="warning")
     }
-    df_new <- df_tr[!isdup_s, ]
-    if(nrow(df_new) == 0){
-      showNotification("Alles war bereits im Setting vorhanden.", type = "warning")
+    df_new <- df_tr[!isdup_s,]
+    if(nrow(df_new)==0){
+      showNotification("Alles war bereits im Setting vorhanden.", type="warning")
       return(NULL)
     }
-    
     appended <- rbind(old_stored, df_new)
     saveSettingData(appended, input$which_setting)
     storedData(appended)
-    showNotification(paste(nrow(df_new), "Zeilen appended & gespeichert!"), type = "message")
+    showNotification(paste(nrow(df_new), "Zeilen appended & gespeichert!"), type="message")
   })
   
-  # ------------------------------------------------------------------------
   # my_querys => Löschfunktion + Duplikate
-  # ------------------------------------------------------------------------
   output$myQueriesDT <- renderDT({
-    datatable(queryDataRV(),
-              selection = "multiple",
-              options = list(pageLength = 5, scrollY = "400px", autoWidth = TRUE,
-                             columnDefs = list(list(width = 'auto', targets = "_all")))
+    datatable(queryDataRV(), selection="multiple", editable=TRUE,
+              options = list(pageLength=5, scrollY="400px", autoWidth=TRUE)
     )
   })
-  
   observeEvent(input$delQueries, {
     sel <- input$myQueriesDT_rows_selected
     if(length(sel)==0){
-      showNotification("Keine Zeilen in my_querys markiert!", type = "warning")
+      showNotification("Keine Zeilen markiert!", type="warning")
       return(NULL)
     }
     oldQ <- queryDataRV()
-    newQ <- oldQ[-sel, ]
+    newQ <- oldQ[-sel,]
     queryDataRV(newQ)
     save_querys(newQ)
-    showNotification(paste(length(sel), "Zeile(n) aus my_querys gelöscht!"), type = "message")
+    showNotification(paste(length(sel), "Zeile(n) aus my_querys gelöscht!"), type="message")
   })
   
   output$myQueriesDuplicates <- renderDT({
-    datatable(myQueriesDuplicatesRV(),
-              options = list(pageLength = 5, scrollY = "200px", autoWidth = TRUE,
-                             columnDefs = list(list(width = 'auto', targets = "_all")))
+    datatable(myQueriesDuplicatesRV(), 
+              options = list(pageLength=5, scrollY="200px", autoWidth=TRUE)
     )
   })
-  
   observeEvent(input$showDuplicates, {
     dfQ <- queryDataRV()
     if(nrow(dfQ)==0){
-      showNotification("my_querys ist leer => keine Duplikate", type = "warning")
+      showNotification("my_querys ist leer => keine Duplikate", type="warning")
       myQueriesDuplicatesRV(data.frame())
       return(NULL)
     }
-    dupRows <- dfQ[dfQ$Original == dfQ$Uebersetzung, , drop = FALSE]
+    dupRows <- dfQ[dfQ$Original == dfQ$Uebersetzung, , drop=FALSE]
     if(nrow(dupRows)==0){
-      showNotification("Keine Duplikate (Original == Übersetzung) gefunden!", type = "message")
+      showNotification("Keine Duplikate (Original == Übersetzung) gefunden!", type="message")
     } else {
-      showNotification(paste(nrow(dupRows), "Duplikate gefunden!"), type = "message")
+      showNotification(paste(nrow(dupRows), "Duplikate gefunden!"), type="message")
     }
     myQueriesDuplicatesRV(dupRows)
   })
-  
   observeEvent(input$removeDuplicates, {
     dfQ <- queryDataRV()
     if(nrow(dfQ)==0){
-      showNotification("my_querys ist leer => nichts zu entfernen", type = "warning")
+      showNotification("my_querys ist leer => nichts zu entfernen", type="warning")
       return(NULL)
     }
     keep <- (dfQ$Original != dfQ$Uebersetzung)
     removedCount <- sum(!keep)
-    newQ <- dfQ[keep, ]
+    newQ <- dfQ[keep,]
     if(removedCount>0){
       queryDataRV(newQ)
       save_querys(newQ)
-      showNotification(paste(removedCount, "Duplikate entfernt!"), type = "message")
+      showNotification(paste(removedCount, "Duplikate entfernt!"), type="message")
     } else {
-      showNotification("Keine Duplikate gefunden => nichts entfernt!", type = "warning")
+      showNotification("Keine Duplikate gefunden => nichts entfernt!", type="warning")
     }
     myQueriesDuplicatesRV(data.frame())
   })
   
-  # ------------------------------------------------------------------------
-  # Haupt-Tabelle (gewähltes Setting) => Filter + Bearbeitung
-  # ------------------------------------------------------------------------
+  # Haupt-Tabelle => Filter + Bearbeitung
   output$langFilterUI <- renderUI({
     df_line <- storedData()
-    if(nrow(df_line) == 0){
-      ch <- "Keine Daten"
+    if(nrow(df_line)==0){
+      p("Keine Daten")
     } else {
       uspr <- unique(df_line$Sprache)
-      ch <- sort(uspr)
+      ch <- c("Alle", sort(uspr))
+      checkboxGroupInput("filter_sprachen", "Filter nach Sprache:",
+                         choices=ch, selected="Alle", inline=TRUE)
     }
-    ch <- c("Alle", ch)
-    checkboxGroupInput("filter_sprachen",
-                       "Filter nach Sprache (mehrfach möglich):",
-                       choices = ch, selected = "Alle", inline = TRUE
-    )
   })
   
-  # Hilfsfunktion => Filter nach Buchstaben
   getFilteredData <- reactive({
     df <- storedData()
     if(nrow(df)==0) return(df[0,])
-    
-    # Auslesen, ob wir Original oder Uebersetzung filtern wollen:
-    colFilter <- ifelse(input$filterByCol == "Original", "Original", "Uebersetzung")
+    colFilter <- ifelse(input$filterByCol=="Original","Original","Uebersetzung")
     
     let0 <- input$letters_row0
     let1 <- input$letters_row1
@@ -907,24 +874,21 @@ server <- function(input, output, session){
         df <- df[0,]
       } else {
         firstChar <- substr(df[[colFilter]], 1, 1)
-        df <- df[tolower(firstChar) %in% tolower(chosen), ]
+        df <- df[tolower(firstChar) %in% tolower(chosen),]
       }
     }
     selLang <- input$filter_sprachen
     if(!is.null(selLang) && !("Alle" %in% selLang)){
-      df <- df[df$Sprache %in% selLang, ]
+      df <- df[df$Sprache %in% selLang,]
     }
     df
   })
   
   output$mainDT <- renderDT({
-    datatable(getFilteredData(),
-              selection = "multiple", editable = TRUE,
-              options = list(pageLength = 25, scrollY = "400px", autoWidth = TRUE,
-                             columnDefs = list(list(width = 'auto', targets = "_all")))
+    datatable(getFilteredData(), selection="multiple", editable=TRUE,
+              options = list(pageLength=25, scrollY="400px", autoWidth=TRUE)
     )
   })
-  
   observeEvent(input$mainDT_cell_edit, {
     info <- input$mainDT_cell_edit
     df_filtered <- isolate(getFilteredData())
@@ -937,53 +901,46 @@ server <- function(input, output, session){
     
     rowNameFiltered <- rownames(df_filtered)[i]
     idxFull <- as.integer(rowNameFiltered)
-    
     colN <- colnames(df_filtered)[j]
-    df_full[idxFull, colN] <- v
     
+    df_full[idxFull, colN] <- v
     storedData(df_full)
     req(input$which_setting)
     saveSettingData(df_full, input$which_setting)
-    showNotification(paste("Zelle geändert:", colN, "=>", v), type = "message")
+    showNotification(paste("Zelle geändert:", colN, "=>", v), type="message")
   })
-  
   observeEvent(input$delRows, {
     sel <- input$mainDT_rows_selected
     if(length(sel)==0){
-      showNotification("Keine Zeilen markiert!", type = "warning")
+      showNotification("Keine Zeilen markiert!", type="warning")
       return(NULL)
     }
     df_f <- getFilteredData()
     df_full <- storedData()
-    
     rowNameFiltered <- rownames(df_f)[sel]
     idxFull <- as.integer(rowNameFiltered)
     
-    df_full <- df_full[-idxFull, ]
+    df_full <- df_full[-idxFull,]
     storedData(df_full)
     req(input$which_setting)
     saveSettingData(df_full, input$which_setting)
-    showNotification(paste(length(sel), "Zeile(n) gelöscht!"), type = "message")
+    showNotification(paste(length(sel), "Zeile(n) gelöscht!"), type="message")
   })
   
-  # ------------------------------------------------------------------------
   # QUIZ-Bereich
-  # ------------------------------------------------------------------------
   output$quiz_mode_text <- renderText({
     selLang <- input$filter_sprachen
     if(is.null(selLang) || length(selLang)==0) return("Keine Auswahl")
-    if("Alle" %in% selLang) "Alle Sprachen" else paste(selLang, collapse = ", ")
+    if("Alle" %in% selLang) "Alle Sprachen" else paste(selLang, collapse=", ")
   })
-  
   output$quiz_direction_UI <- renderUI({
     tagList(
       strong("Aktuelle Abfragerichtung:"),
-      textOutput("quiz_currentDirection", inline = TRUE),
+      textOutput("quiz_currentDirection", inline=TRUE),
       br(),
-      textInput("quiz_answer", "Meine Übersetzung (Antwort):", "")
+      textInput("quiz_answer", "Meine Übersetzung (Antwort):","")
     )
   })
-  
   output$quiz_currentDirection <- renderText({
     rw <- quizWordRV()
     if(is.null(rw) || nrow(rw)==0) return("???")
@@ -998,17 +955,16 @@ server <- function(input, output, session){
     }
     set.seed(as.integer(Sys.time()))
     idx <- sample(seq_len(nrow(df)), 1)
-    quizWordRV(df[idx, , drop = FALSE])
+    quizWordRV(df[idx,,drop=FALSE])
   }
   
   observeEvent(input$startQuiz, {
     quizSessionRV(data.frame())
     quizWordRV(NULL)
     quizSessionStart(Sys.time())
-    showNotification("Abfragesession gestartet!", type = "message")
+    showNotification("Abfragesession gestartet!", type="message")
     getNextWord()
   })
-  
   output$quiz_word <- renderText({
     rw <- quizWordRV()
     if(is.null(rw) || nrow(rw)==0) return("")
@@ -1018,24 +974,23 @@ server <- function(input, output, session){
   observeEvent(input$quiz_check, {
     ans <- trimws(input$quiz_answer)
     if(nchar(ans)==0){
-      showNotification("Bitte zuerst eine Antwort eingeben!", type = "warning")
+      showNotification("Bitte zuerst eine Antwort eingeben!", type="warning")
       return(NULL)
     }
     if(is.null(quizSessionStart())){
-      showNotification("Keine Session aktiv => zuerst starten!", type = "warning")
+      showNotification("Keine Session aktiv => zuerst starten!", type="warning")
       return(NULL)
     }
     quizStageRV(TRUE)
     
     rw <- quizWordRV()
     if(is.null(rw) || nrow(rw)==0){
-      showNotification("Kein aktuelles Wort => NextWord...", type = "warning")
+      showNotification("Kein aktuelles Wort => NextWord...", type="warning")
       getNextWord()
       return(NULL)
     }
     realVal <- rw$Uebersetzung[1]
-    
-    res <- ifelse(tolower(ans) == tolower(trimws(realVal)), "ok", "nok")
+    res <- ifelse(tolower(ans)==tolower(trimws(realVal)), "ok","nok")
     
     rowQ <- data.frame(
       Zeitstempel         = format(Sys.time(), "%d.%m.%Y_%H.%M.%S"),
@@ -1058,11 +1013,11 @@ server <- function(input, output, session){
     save_quiz_data(newQL)
     
     if(res=="ok"){
-      showNotification("Richtig!", type = "message")
+      showNotification("Richtig!", type="message")
     } else {
-      showNotification(paste("Falsch! Korrekt wäre:", realVal), type = "warning")
+      showNotification(paste("Falsch! Korrekt wäre:", realVal), type="warning")
     }
-    updateTextInput(session, "quiz_answer", value = "")
+    updateTextInput(session, "quiz_answer", value="")
     getNextWord()
   })
   
@@ -1073,51 +1028,49 @@ server <- function(input, output, session){
   
   output$quizSessionDT <- renderDT({
     df <- quizSessionRV()
-    if(nrow(df) > 0){
+    if(nrow(df)>0){
       df$ParsedTS <- as.POSIXct(df$Zeitstempel, format="%d.%m.%Y_%H.%M.%S")
-      df <- df[order(df$ParsedTS, decreasing=TRUE), ]
+      df <- df[order(df$ParsedTS, decreasing=TRUE),]
       df$ParsedTS <- NULL
     }
-    datatable(df,
-              options = list(pageLength = 5, scrollX = TRUE, autoWidth = TRUE,
-                             columnDefs = list(list(width = 'auto', targets = "_all")))
+    datatable(df, 
+              options = list(pageLength=5, scrollX=TRUE, autoWidth=TRUE)
     )
   })
-  
   output$quizStats <- renderTable({
     sess <- quizSessionRV()
     st <- quizSessionStart()
     if(is.null(st) || nrow(sess)==0){
       return(data.frame(
-        Zeit = "00:00", AnzahlAbfragen = 0, Richtig = 0, Falsch = 0,
-        QuoteRichtig = "0%", QuoteFalsch = "0%"
+        Zeit="00:00", AnzahlAbfragen=0, Richtig=0, Falsch=0,
+        QuoteRichtig="0%", QuoteFalsch="0%"
       ))
     }
     nGes <- nrow(sess)
-    nOk <- sum(sess$Ergebnis=="ok")
-    nNo <- sum(sess$Ergebnis=="nok")
-    qOk <- paste0(round(100*nOk/nGes,0),"%")
-    qNo <- paste0(round(100*nNo/nGes,0),"%")
+    nOk  <- sum(sess$Ergebnis=="ok")
+    nNo  <- sum(sess$Ergebnis=="nok")
+    qOk  <- paste0(round(100*nOk/nGes,0),"%")
+    qNo  <- paste0(round(100*nNo/nGes,0),"%")
     
-    diffSec <- as.numeric(difftime(Sys.time(), st, units = "secs"))
+    diffSec <- as.numeric(difftime(Sys.time(), st, units="secs"))
     mm <- floor(diffSec/60)
     ss <- round(diffSec - mm*60)
     
     data.frame(
-      Zeit = sprintf("%02d:%02d", mm, ss),
-      AnzahlAbfragen = nGes,
-      Richtig = nOk,
-      Falsch = nNo,
-      QuoteRichtig = qOk,
-      QuoteFalsch = qNo,
-      stringsAsFactors = FALSE
+      Zeit=sprintf("%02d:%02d", mm, ss),
+      AnzahlAbfragen=nGes,
+      Richtig=nOk,
+      Falsch=nNo,
+      QuoteRichtig=qOk,
+      QuoteFalsch=qNo,
+      stringsAsFactors=FALSE
     )
   })
   
   observeEvent(input$endQuiz, {
     st <- quizSessionStart()
     if(is.null(st)){
-      showNotification("Keine aktive Session!", type = "warning")
+      showNotification("Keine aktive Session!", type="warning")
       return(NULL)
     }
     sess <- quizSessionRV()
@@ -1126,7 +1079,7 @@ server <- function(input, output, session){
       nOk  <- sum(sess$Ergebnis=="ok")
       nNo  <- sum(sess$Ergebnis=="nok")
       
-      diffSec <- as.numeric(difftime(Sys.time(), st, units = "secs"))
+      diffSec <- as.numeric(difftime(Sys.time(), st, units="secs"))
       mm <- floor(diffSec/60)
       ss <- round(diffSec - mm*60)
       dauer <- sprintf("%02d:%02d", mm, ss)
@@ -1145,27 +1098,21 @@ server <- function(input, output, session){
         Setting       = input$which_setting,
         DetailRichtig = "",
         DetailFalsch  = "",
-        stringsAsFactors = FALSE
+        stringsAsFactors=FALSE
       )
       newHist <- rbind(oldHist, newRow)
       sessionHistRV(newHist)
       save_session_history(newHist)
     }
     quizSessionStart(NULL)
-    showNotification("Abfragesession beendet!", type = "message")
+    showNotification("Abfragesession beendet!", type="message")
   })
-  
   output$sessionHistDT <- renderDT({
-    datatable(sessionHistRV(),
-              selection = "multiple",
-              options = list(pageLength = 5, scrollX = TRUE,
-                             order = list(list(1, "desc")),
-                             autoWidth = TRUE,
-                             columnDefs = list(list(width = 'auto', targets = "_all")))
+    datatable(sessionHistRV(), selection="multiple",
+              options = list(pageLength=5, scrollX=TRUE, order=list(list(1,"desc")),
+                             autoWidth=TRUE)
     )
   })
-  
-  # Neu: Markierte Zeilen in Session-Historie löschen
   observeEvent(input$delSessionHist, {
     sel <- input$sessionHistDT_rows_selected
     if(length(sel)==0){
@@ -1173,44 +1120,36 @@ server <- function(input, output, session){
       return(NULL)
     }
     df <- sessionHistRV()
-    df <- df[-sel, ]
+    df <- df[-sel,]
     sessionHistRV(df)
     save_session_history(df)
     showNotification(paste(length(sel), "Zeile(n) aus Session-Historie gelöscht!"), type="message")
   })
   
-  # ------------------------------------------------------------------------
   # TAB 2: QUIZ-LOG
-  # ------------------------------------------------------------------------
   observeEvent(input$reloadQuizLog, {
     df <- load_quiz_data()
     quizLogRV(df)
-    showNotification("Quiz-Log neu geladen.", type = "message")
+    showNotification("Quiz-Log neu geladen.", type="message")
   })
-  
   output$quizLogTable <- renderDT({
-    datatable(quizLogRV(),
-              selection = "multiple",
-              options = list(pageLength = 25, scrollX = TRUE,
-                             order = list(list(0, "desc")),
-                             autoWidth = TRUE,
-                             columnDefs = list(list(width = 'auto', targets = "_all")))
+    datatable(quizLogRV(), selection="multiple",
+              options = list(pageLength=25, scrollX=TRUE, order=list(list(0,"desc")),
+                             autoWidth=TRUE)
     )
   })
-  
   observeEvent(input$delQuizLog, {
     sel <- input$quizLogTable_rows_selected
     if(length(sel)==0){
-      showNotification("Keine Zeilen im Quiz-Log markiert!", type = "warning")
+      showNotification("Keine Zeilen im Quiz-Log markiert!", type="warning")
       return(NULL)
     }
     df <- quizLogRV()
-    df <- df[-sel, ]
+    df <- df[-sel,]
     quizLogRV(df)
     save_quiz_data(df)
-    showNotification(paste(length(sel), "Zeile(n) gelöscht (Quiz-Log)!"), type = "message")
+    showNotification(paste(length(sel), "Zeile(n) gelöscht (Quiz-Log)!"), type="message")
   })
-  
   output$quizPlot <- renderPlot({
     dfq <- quizLogRV()
     if(nrow(dfq)==0){
@@ -1220,7 +1159,7 @@ server <- function(input, output, session){
     }
     times <- strptime(dfq$Zeitstempel, "%d.%m.%Y_%H.%M.%S")
     dfq$TimePOSIX <- as.POSIXct(times)
-    dfp <- dfq[!is.na(dfq$TimePOSIX), ]
+    dfp <- dfq[!is.na(dfq$TimePOSIX),]
     if(nrow(dfp)==0){
       plot.new()
       title("Keine parsebaren Zeitstempel => kein Diagramm")
@@ -1228,12 +1167,11 @@ server <- function(input, output, session){
     }
     dfp$OkVal <- ifelse(dfp$Ergebnis=="ok", 1L, 0L)
     
-    ggplot(dfp, aes(x = TimePOSIX, y = OkVal, color = Abfragerichtung)) +
-      geom_point(size = 3, alpha = 0.7) +
-      geom_line(aes(group = Abfragerichtung), alpha = 0.4) +
-      scale_y_continuous(breaks = c(0,1), labels = c("nok", "ok")) +
-      labs(x = "Zeit", y = "Ergebnis (ok=1, nok=0)",
-           title = "Quiz-Log Zeitverlauf") +
+    ggplot(dfp, aes(x=TimePOSIX, y=OkVal, color=Abfragerichtung)) +
+      geom_point(size=3, alpha=0.7) +
+      geom_line(aes(group=Abfragerichtung), alpha=0.4) +
+      scale_y_continuous(breaks=c(0,1), labels=c("nok","ok")) +
+      labs(x="Zeit", y="Ergebnis (ok=1, nok=0)", title="Quiz-Log Zeitverlauf") +
       theme_minimal()
   })
 }
@@ -1243,4 +1181,3 @@ server <- function(input, output, session){
 ############################################################################
 
 shinyApp(ui, server)
-
