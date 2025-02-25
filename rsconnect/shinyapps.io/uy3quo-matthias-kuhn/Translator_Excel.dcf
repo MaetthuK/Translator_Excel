@@ -1,0 +1,12 @@
+name: Translator_Excel
+title: Translator_Excel
+username: uy3quo-matthias-kuhn
+account: uy3quo-matthias-kuhn
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 14091493
+bundleId: 9853440
+url: https://uy3quo-matthias-kuhn.shinyapps.io/Translator_Excel/
+version: 1
+asMultiple: FALSE
+asStatic: FALSE
