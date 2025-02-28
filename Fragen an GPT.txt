@@ -1,0 +1,23 @@
+Task 1
+
+ch möchte dass die Buttons "Alle bisherigen Übersetzungen" / "Anzeige gewähltes Setting" / "Quiz" nicht mehr übereinander angeordnet sind.
+Sie sollen nebeneinander angeordnet werden und nach wie vor klappbar sein.
+Es soll jedoch nicht möglich sein diese
+
+Task2
+
+Zudem gestaltest du mir den Buchstaben-Filter besser:
+Folgens raus.
+=> Zeile 0 (Alle):
+=> Zeile 1 (A-H):
+=> Zeile 2 (I-Q):
+=> Zeile 3 (R-Z):
+Die Buchstabnfilter dann in einem Gitter machen dass es schön formatiert ist.
+Ich möchte dass in diesem Gitter wie bisher bei den Häkchen mehrere angewählt werden können.
+
+Task 3
+
+Im Moment ist die Standardauswahl "Alle" was auch gut ist. Aber ich möchte dass sobald ich auf einen
+Buchstaben drücke die Standardauswahle "Alle" deaktiviert wird und der Buchstabenfilter entsprechend angewendet wird.
+ 
+
