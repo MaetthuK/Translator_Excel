@@ -5,7 +5,7 @@ account: uy3quo-matthias-kuhn
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 14091493
-bundleId: 9870693
+bundleId: 9871189
 url: https://uy3quo-matthias-kuhn.shinyapps.io/Translator_Excel/
 version: 1
 asMultiple: FALSE
