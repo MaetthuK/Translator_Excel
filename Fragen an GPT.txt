@@ -1,23 +1,58 @@
-Task 1
+# -------------------------
+# >> TASK 1 (erledigt)
+# Beschreibung:
+#   Buttons sollen horizontal statt vertikal angeordnet sein.
+#   Vorhandene Lösung bereits umgesetzt.
+# -------------------------
 
-ch möchte dass die Buttons "Alle bisherigen Übersetzungen" / "Anzeige gewähltes Setting" / "Quiz" nicht mehr übereinander angeordnet sind.
-Sie sollen nebeneinander angeordnet werden und nach wie vor klappbar sein.
-Es soll jedoch nicht möglich sein diese
+# -------------------------
+# >> TASK 2 (erledigt)
+# Beschreibung:
+#   - Mehrfachauswahl soll NICHT möglich sein.
+#   - Tabellen sollen als separates Register erscheinen.
+# -------------------------
 
-Task2
+# -------------------------
+# >> TASK 3 (erledigt)
+# Beschreibung:
+#   - Standardauswahl ist "Alle".
+#   - Drückt man einen Buchstaben-Button, soll "Alle" deaktiviert werden 
+#     und der Buchstabenfilter angewendet werden.
+#   - Aktueller Fehler: "Warnung: Error in .subset2..."
+# -------------------------
 
-Zudem gestaltest du mir den Buchstaben-Filter besser:
-Folgens raus.
-=> Zeile 0 (Alle):
-=> Zeile 1 (A-H):
-=> Zeile 2 (I-Q):
-=> Zeile 3 (R-Z):
-Die Buchstabnfilter dann in einem Gitter machen dass es schön formatiert ist.
-Ich möchte dass in diesem Gitter wie bisher bei den Häkchen mehrere angewählt werden können.
+# -------------------------
+# >> TASK 4 (erledigt)
+# Zeitstempel: 2023-10-11 14:25:00
+# Beschreibung:
+#   - Alle Tabellen automatisch an Spaltenbreite anpassen (Autofit).
+#   - Register "Alle bisherigen Übersetzungen", "Anzeige gewähltes Setting" 
+#     und "Quiz" deutlicher hervorheben.
+#   - Im Buchstabenfilter leere Zeilen entfernen und den Filter klarer gestalten.
+#   - Die Tabelle bei "Quiz-Log" hat links einen Versatz. Bitte platzsparender anordnen.
+# -------------------------
 
-Task 3
+# -------------------------
+# >> TASK 5 (teilweise erledigt)
+# Beschreibung:
+#   - Vor Benutzung auswählen, ob ein vorhandenes Setting genutzt 
+#     oder ein neues erstellt wird.
+#   - "Anzeige gewähltes Setting" als erstes Register statt "Alle bisherigen Übersetzungen".
+#   - Tabellen interaktiv gestalten (z.B. mit passendem R-Package).
+#   - Gesamt-UI ansprechender gestalten.
+# -------------------------
 
-Im Moment ist die Standardauswahl "Alle" was auch gut ist. Aber ich möchte dass sobald ich auf einen
-Buchstaben drücke die Standardauswahle "Alle" deaktiviert wird und der Buchstabenfilter entsprechend angewendet wird.
- 
+# -------------------------
+# >> TASK 6 (neu)
+# Beschreibung:
+#   - Auch Tabelle "Alle bisherigen Übersetzungen" interaktiv machen.
+#   - Tabellen nicht mehr so breit darstellen.
+#   - Tabelle "Was möchten Sie tun?" nur links in der App platzieren.
+#   - "Aktuelle Übersetzung im Speicher:" nach oben rechts verschieben.
+#   - Tabs "Anzeige gewähltes Setting", "Alle bisherigen Übersetzungen" und "Quiz" 
+#     auf gleiche Höhe mit den blauen Buttons links.
+#   - Im "Quiz"-Tab Buttons wie in Printscreen 2 gestalten.
+# -------------------------
 
+
+# -------------------------
