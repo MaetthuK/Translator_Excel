@@ -378,6 +378,7 @@ ui <- fluidPage(
                    strong("Buchstaben-Filter"),
                    
                    # -- NEU/GEÄNDERT: Grid-Layout für die Checkbox-Gruppen
+                   
                    div(
                      style="display: grid; grid-template-rows: auto auto auto auto auto; gap: 5px;",
                      checkboxGroupInput("letters_row0", "Zeile 0 (Alle):",
