@@ -37,38 +37,14 @@ body {
   border-color: #4cae4c;
 }
 
-/* --- CSS für <details>/<summary> => Button-Styling */
-details summary {
-  display: inline-block;
-  cursor: pointer;
-  background-color: #008cba; /* Button-Hintergrund */
-  color: #fff;
-  padding: 8px 12px;
-  border-radius: 4px;
-  margin-bottom: 5px;
+/* --- Tabs-Layout: z.B. Abstände anpassen, etc. --- */
+.nav-tabs > li > a {
   font-weight: bold;
-  user-select: none;
-  outline: none;
-  border: 1px solid #007c9a;
-}
-details summary::-webkit-details-marker {
-  display: none; /* Standard-Pfeil entfernen */
-}
-details summary::after {
-  content: ' ▼';
-  font-size: 0.9em;
-  margin-left: 5px;
-}
-details[open] summary::after {
-  content: ' ▲';
-}
-details[open] summary {
-  background-color: #0079a5;
 }
 
-/* optional: etwas Platz unter den <details>-Blöcken */
-details {
-  margin-bottom: 10px;
+/* optional: etwas Platz unter den Tabs */
+.tab-content {
+  margin-top: 15px;
 }
 "
 
@@ -306,25 +282,6 @@ ui <- fluidPage(
   # Kopfzeile mit Custom-CSS
   tags$head(tags$style(HTML(customCSS))),
   
-  # Script: sorgt dafür, dass nur EIN <details> auf einmal geöffnet sein kann
-  tags$script("
-    document.addEventListener('DOMContentLoaded', function() {
-      const allDetails = document.querySelectorAll('details');
-      allDetails.forEach((det) => {
-        det.addEventListener('toggle', function() {
-          if (this.open) {
-            // alle anderen schließen
-            allDetails.forEach((otherDet) => {
-              if (otherDet !== this && otherDet.open) {
-                otherDet.removeAttribute('open');
-              }
-            });
-          }
-        });
-      });
-    });
-  "),
-  
   # Zeile mit Buttons für "Übersetzen", "Quiz-Log", "Settings verwalten"
   fluidRow(
     column(12,
@@ -357,14 +314,12 @@ ui <- fluidPage(
                                selected = "de"),
                    textAreaInput("text_in", "Zu übersetzender Text:",
                                  "Hallo", width = "100%", height = "100px"),
-                   # Option "Ganze Textblöcke"
                    radioButtons("translate_mode", "Übersetzungsmodus:",
                                 choices = c("Pro Zeile" = "linewise",
                                             "Ganze Textblöcke" = "block"),
                                 selected = "linewise"),
                    
-                   # -- NEU/GEÄNDERT: Einfaches selectInput für Zielsprache(n).
-                   #    Wir aktualisieren die Auswahl dynamisch (siehe server).
+                   # Zielsprache(n) - dynamische Anpassung (siehe server)
                    selectInput("target_langs", "Zielsprache(n):",
                                choices = c("Englisch"="en","Französisch"="fr",
                                            "Spanisch"="es","Italienisch"="it"), 
@@ -376,18 +331,20 @@ ui <- fluidPage(
                                 class = "btn-success"),
                    br(), br(),
                    strong("Buchstaben-Filter"),
-                   
-                   # -- NEU/GEÄNDERT: Grid-Layout für die Checkbox-Gruppen
+                   # NEU: Radio-Buttons zum Filtern Original vs. Übersetzung
+                   radioButtons("filterByCol", "Filter anwenden auf:",
+                                choices = c("Original", "Uebersetzung"),
+                                selected = "Original", inline = TRUE),
                    
                    div(
                      style="display: grid; grid-template-rows: auto auto auto auto auto; gap: 5px;",
-                     checkboxGroupInput("letters_row0", "Zeile 0 (Alle):",
+                     checkboxGroupInput("letters_row0", "",
                                         choices = c("Alle"), selected = "Alle", inline = TRUE),
-                     checkboxGroupInput("letters_row1", "Zeile 1 (A-H):",
+                     checkboxGroupInput("letters_row1", "",
                                         choices = c("A","B","C","D","E","F","G","H"), inline = TRUE),
-                     checkboxGroupInput("letters_row2", "Zeile 2 (I-Q):",
+                     checkboxGroupInput("letters_row2", "",
                                         choices = c("I","J","K","L","M","N","O","P","Q"), inline = TRUE),
-                     checkboxGroupInput("letters_row3", "Zeile 3 (R-Z):",
+                     checkboxGroupInput("letters_row3", "",
                                         choices = c("R","S","T","U","V","W","X","Y","Z"), inline = TRUE),
                      checkboxGroupInput("letters_row4", "Umlaute",
                                         choices = c("Ä","Ö","Ü"), inline = TRUE)
@@ -399,80 +356,72 @@ ui <- fluidPage(
                column(
                  width = 9,
                  h4("Aktuelle Übersetzung im Speicher:"),
-                 
-                 # -- NEU/GEÄNDERT: Anstelle von tableOutput => DTOutput für Autofit
                  DTOutput("tbl_current"),
                  
-                 # -- NEU/GEÄNDERT: Die drei Details horizontal nebeneinander
-                 div(
-                   style = "display: flex; gap: 20px;",
+                 # --- NEU: TabsetPanel statt <details> => 3 separate Register
+                 tabsetPanel(
+                   id = "subTabs",  # falls wir es später ansteuern möchten
                    
-                   tags$details(
-                     style = "flex:1;",
-                     tags$summary("Alle bisherigen Übersetzungen"),
-                     fluidRow(
-                       column(6, actionButton("delQueries", "Zeilen löschen (Queries)", class = "btn-warning")),
-                       column(6,
-                              fluidRow(
-                                column(6, actionButton("showDuplicates", "Zeige Duplikate", class = "btn-info", width = "100%")),
-                                column(6, actionButton("removeDuplicates", "Duplikate entfernen", class = "btn-danger", width = "100%"))
+                   tabPanel("Alle bisherigen Übersetzungen",
+                            fluidRow(
+                              column(6, actionButton("delQueries", "Zeilen löschen (Queries)", class = "btn-warning")),
+                              column(6,
+                                     fluidRow(
+                                       column(6, actionButton("showDuplicates", "Zeige Duplikate", class = "btn-info", width = "100%")),
+                                       column(6, actionButton("removeDuplicates", "Duplikate entfernen", class = "btn-danger", width = "100%"))
+                                     )
                               )
-                       )
-                     ),
-                     br(),
-                     DTOutput("myQueriesDT"),
-                     br(),
-                     h4("Gefundene Duplikate (Original == Übersetzung):"),
-                     DTOutput("myQueriesDuplicates")
+                            ),
+                            br(),
+                            DTOutput("myQueriesDT"),
+                            br(),
+                            h4("Gefundene Duplikate (Original == Übersetzung):"),
+                            DTOutput("myQueriesDuplicates")
                    ),
                    
-                   tags$details(
-                     style = "flex:1;",
-                     tags$summary("Anzeige gewähltes Setting"),
-                     fluidRow(
-                       column(6, actionButton("delRows", "Markierte Zeilen löschen", class = "btn-warning")),
-                       column(6, p("Zellen direkt bearbeiten (Double-click)"))
-                     ),
-                     DTOutput("mainDT")
+                   tabPanel("Anzeige gewähltes Setting",
+                            fluidRow(
+                              column(6, actionButton("delRows", "Markierte Zeilen löschen", class = "btn-warning")),
+                              column(6, p("Zellen direkt bearbeiten (Double-click)"))
+                            ),
+                            DTOutput("mainDT")
                    ),
                    
-                   tags$details(
-                     style = "flex:1;",
-                     tags$summary("Quiz"),
-                     br(),
-                     fluidRow(
-                       column(
-                         12,
-                         strong("Aktuell gewählte Abfragerichtung (Filter):"),
-                         textOutput("quiz_mode_text"),
-                         br(),
-                         actionButton("startQuiz", "Abfragesession starten", class = "btn-info"),
-                         br(), br(),
-                         strong("Aktuelles Wort/Satz:"),
-                         textOutput("quiz_word"),
-                         br(),
-                         uiOutput("quiz_direction_UI"),
-                         br(),
-                         actionButton("quiz_check", "Prüfen", class = "btn-success"),
-                         br(),
-                         textOutput("quiz_feedback"),
-                         br(),
-                         actionButton("endQuiz", "Abfragesession beenden", class = "btn-danger"),
-                         br(), br(),
-                         h4("Aktuelle Quizsession"),
-                         DTOutput("quizSessionDT"),
-                         br(),
-                         h4("Statistik Quizsession"),
-                         tableOutput("quizStats"),
-                         br(),
-                         h4("Historie Abfragesession"),
-                         fluidRow(
-                           column(12, actionButton("delSessionHist", "Markierte Zeilen löschen (Historie)", class="btn-warning"))
-                         ),
-                         br(),
-                         DTOutput("sessionHistDT")
-                       )
-                     )
+                   tabPanel("Quiz",
+                            br(),
+                            fluidRow(
+                              column(
+                                12,
+                                strong("Aktuell gewählte Abfragerichtung (Filter):"),
+                                textOutput("quiz_mode_text"),
+                                br(),
+                                actionButton("startQuiz", "Abfragesession starten", class = "btn-info"),
+                                br(), br(),
+                                strong("Aktuelles Wort/Satz:"),
+                                textOutput("quiz_word"),
+                                br(),
+                                uiOutput("quiz_direction_UI"),
+                                br(),
+                                actionButton("quiz_check", "Prüfen", class = "btn-success"),
+                                br(),
+                                textOutput("quiz_feedback"),
+                                br(),
+                                actionButton("endQuiz", "Abfragesession beenden", class = "btn-danger"),
+                                br(), br(),
+                                h4("Aktuelle Quizsession"),
+                                DTOutput("quizSessionDT"),
+                                br(),
+                                h4("Statistik Quizsession"),
+                                tableOutput("quizStats"),
+                                br(),
+                                h4("Historie Abfragesession"),
+                                fluidRow(
+                                  column(12, actionButton("delSessionHist", "Markierte Zeilen löschen (Historie)", class="btn-warning"))
+                                ),
+                                br(),
+                                DTOutput("sessionHistDT")
+                              )
+                            )
                    )
                  )
                )
@@ -588,7 +537,7 @@ server <- function(input, output, session){
   output$settingsIndexDT <- renderDT({
     df <- settingsIndexRV()
     datatable(df,
-              selection = "single",
+              selection = "single",  # <--- Nur 1 Zeile auswählbar
               options = list(pageLength = 5, scrollX = TRUE, autoWidth = TRUE,
                              columnDefs = list(list(width = 'auto', targets = "_all")))
     )
@@ -690,7 +639,7 @@ server <- function(input, output, session){
   })
   
   # ------------------------------------------------------------------------
-  # -- NEU/GEÄNDERT: Mechanismus, damit Zielsprache != Eingabesprache
+  # Mechanismus, damit Zielsprache != Eingabesprache
   # ------------------------------------------------------------------------
   observeEvent(input$lang_in, {
     allChoices <- c("Deutsch" = "de", "Englisch" = "en",
@@ -715,8 +664,6 @@ server <- function(input, output, session){
   # ------------------------------------------------------------------------
   # Übersetzen (Google API) => currentData + my_querys
   # ------------------------------------------------------------------------
-  
-  # -- NEU/GEÄNDERT: statt renderTable => renderDT für autofit
   output$tbl_current <- renderDT({
     df <- currentData()
     if(nrow(df) == 0){
@@ -888,7 +835,7 @@ server <- function(input, output, session){
   # ------------------------------------------------------------------------
   output$myQueriesDT <- renderDT({
     datatable(queryDataRV(),
-              selection = "multiple",
+              selection = "single",  # Nur 1 Zeile auswählbar
               options = list(pageLength = 5, scrollY = "400px", autoWidth = TRUE,
                              columnDefs = list(list(width = 'auto', targets = "_all")))
     )
@@ -909,6 +856,7 @@ server <- function(input, output, session){
   
   output$myQueriesDuplicates <- renderDT({
     datatable(myQueriesDuplicatesRV(),
+              selection = "single",  # Nur 1 Zeile auswählbar
               options = list(pageLength = 5, scrollY = "200px", autoWidth = TRUE,
                              columnDefs = list(list(width = 'auto', targets = "_all")))
     )
@@ -952,16 +900,16 @@ server <- function(input, output, session){
   # ------------------------------------------------------------------------
   # Buchstaben-Filter: "Alle" vs. einzelne Buchstaben
   # ------------------------------------------------------------------------
+  # Sobald man Buchstaben (letters_row1..4) wählt => "Alle" deaktivieren
   observeEvent(c(input$letters_row1, input$letters_row2, input$letters_row3, input$letters_row4), {
-    # Sobald eine der Buchstaben-Checkboxen gewählt wird, "Alle" deaktivieren
     sumLetters <- length(input$letters_row1) + length(input$letters_row2) +
       length(input$letters_row3) + length(input$letters_row4)
     if(sumLetters > 0){
       updateCheckboxGroupInput(session, "letters_row0", selected = character(0))
     }
   })
+  # Sobald "Alle" gewählt => Buchstaben-Checkboxen abwählen
   observeEvent(input$letters_row0, {
-    # Sobald "Alle" gewählt wird, die anderen Zeilen abwählen
     if("Alle" %in% input$letters_row0){
       updateCheckboxGroupInput(session, "letters_row1", selected = character(0))
       updateCheckboxGroupInput(session, "letters_row2", selected = character(0))
@@ -993,6 +941,7 @@ server <- function(input, output, session){
     df <- storedData()
     if(nrow(df)==0) return(df[0,])
     
+    # filterByCol => Original oder Uebersetzung
     colFilter <- ifelse(input$filterByCol == "Original", "Original", "Uebersetzung")
     
     let0 <- input$letters_row0
@@ -1005,6 +954,7 @@ server <- function(input, output, session){
     if(!("Alle" %in% let0)){
       chosen <- c(let1, let2, let3, let4)
       if(length(chosen)==0){
+        # Keine Buchstaben gewählt => leere Ergebnismenge
         df <- df[0,]
       } else {
         firstChar <- substr(df[[colFilter]], 1, 1)
@@ -1022,7 +972,8 @@ server <- function(input, output, session){
   
   output$mainDT <- renderDT({
     datatable(getFilteredData(),
-              selection = "multiple", editable = TRUE,
+              selection = "single",  # Nur 1 Zeile auswählbar
+              editable = TRUE,
               options = list(pageLength = 25, scrollY = "400px", autoWidth = TRUE,
                              columnDefs = list(list(width = 'auto', targets = "_all")))
     )
@@ -1183,6 +1134,7 @@ server <- function(input, output, session){
       df$ParsedTS <- NULL
     }
     datatable(df,
+              selection = "single",
               options = list(pageLength = 5, scrollX = TRUE, autoWidth = TRUE,
                              columnDefs = list(list(width = 'auto', targets = "_all")))
     )
@@ -1261,7 +1213,7 @@ server <- function(input, output, session){
   
   output$sessionHistDT <- renderDT({
     datatable(sessionHistRV(),
-              selection = "multiple",
+              selection = "single",
               options = list(pageLength = 5, scrollX = TRUE,
                              order = list(list(1, "desc")),
                              autoWidth = TRUE,
@@ -1293,7 +1245,7 @@ server <- function(input, output, session){
   
   output$quizLogTable <- renderDT({
     datatable(quizLogRV(),
-              selection = "multiple",
+              selection = "single",
               options = list(pageLength = 25, scrollX = TRUE,
                              order = list(list(0, "desc")),
                              autoWidth = TRUE,
