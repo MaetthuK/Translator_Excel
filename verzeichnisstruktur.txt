@@ -1,0 +1,33 @@
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/API Key
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/app.R
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/app_mobile.R
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/apps_struktur_alt/app_1.R
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/apps_struktur_alt/app_2.R
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/apps_struktur_alt/app_3.R
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/apps_struktur_alt/my_querys.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/apps_struktur_alt/my_test.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/apps_struktur_alt/my_test1.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/apps_struktur_alt/settings_index.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/custom.css
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Fragen an GPT.txt
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/images/Englisch_app_1.png
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/index.html
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/my_querys.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/my_test.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/rsconnect/documents/app_1.R/shinyapps.io/uy3quo-matthias-kuhn/Translator_Excel.dcf
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/rsconnect/documents/app_2.R/shinyapps.io/uy3quo-matthias-kuhn/Translator_Excel.dcf
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/rsconnect/documents/app_3.R/shinyapps.io/uy3quo-matthias-kuhn/Translator_Excel.dcf
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/settings_index.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_1.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_100_english_words_wiht_letter__A_.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_25_02_2025.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_Abfragen_25_02_2025.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_Hut.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_Lost_Civilization_Season_1_Episode_1.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_querys.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_quizlog.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_session_history.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/my_Versuch.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Stammdaten/settings_index.xlsx
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/Translator_Excel.Rproj
+C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel/verzeichnisstruktur.txt

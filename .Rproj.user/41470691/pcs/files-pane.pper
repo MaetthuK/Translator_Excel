@@ -2,7 +2,11 @@
     "sortOrder": [
         {
             "columnIndex": 2,
-            "ascending": true
+            "ascending": false
+        },
+        {
+            "columnIndex": 4,
+            "ascending": false
         }
     ],
     "path": "C:/Users/matth/OneDrive/AA_Weiterbildung/R_Projekte/Translator_Excel"
