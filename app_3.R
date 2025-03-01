@@ -1,25 +1,38 @@
-############################################################################
-# app.R (inkl. Task 6 und Integration alter Funktionalitäten)
-# Shiny-App für dynamische Settings + Google-Translate + Quiz-Log
-############################################################################
 
-library(shiny)
-library(shinythemes)
-library(httr)
-library(jsonlite)
-library(openxlsx)
-library(DT)
-library(stringr)
-library(ggplot2)
+## 1) EINLEITUNG UND PAKET-LADEBEREICH ----
 
-# -------------------------------------------------------------------------
-# BITTE DEINEN API-KEY HIER EINTRAGEN
-# -------------------------------------------------------------------------
+
+# In diesem Abschnitt werden alle grundlegenden Dinge für unsere Shiny-App
+# vorbereitet. Dazu zählen:
+# - Laden der benötigten R-Pakete (z. B. shiny, DT, openxlsx)
+# - Definieren von globalen Variablen und Pfaden
+# - Hinterlegen des Google-API-Keys (für Google Translate)
+# - Definition von Custom-CSS, um das Layout zu gestalten
+
+library(shiny)        # Hauptpaket für Shiny-Apps
+library(shinythemes)  # Ermöglicht die Nutzung von Themes (z. B. flatly)
+library(httr)         # Für HTTP-Anfragen (z. B. POST an Google-Translate-API)
+library(jsonlite)     # Zum Verarbeiten von JSON-Antworten (Google Translate)
+library(openxlsx)     # Zum Lesen/Schreiben von Excel-Dateien
+library(DT)           # Für DataTables (interaktive Tabellen in Shiny)
+library(stringr)      # Praktische String-Funktionen
+library(ggplot2)      # Plotten von Diagrammen (z. B. Quiz-Verläufe)
+
+
+## 1.1) Google-API-Key ----
+
+# Bitte hier deinen eigenen Google-API-Key eintragen, damit die
+# Übersetzungsfunktion (Google Translate) funktioniert.
+
 API_KEY <- "AIzaSyDR3-F8HnlRYBSjgAISHxR5VjYrKMlNuxY"
 
-# -------------------------------------------------------------------------
-# Custom-CSS
-# -------------------------------------------------------------------------
+
+## 1.2) Custom-CSS ----
+
+# Im folgenden String customCSS definieren wir einige CSS-Regeln,
+# um das Erscheinungsbild der Shiny-App anzupassen (z. B. Buttons,
+# Tabs, Tabellenbreite usw.).
+
 customCSS <- "
 /* Allgemeine Schriftart */
 body {
@@ -72,13 +85,24 @@ body {
 }
 "
 
-############################################################################
-# XLSX-FUNKTIONEN (load/save) – unverändert aus dem alten Code
-############################################################################
+
+# 2) FUNKTIONEN ZUM LADEN UND SPEICHERN VON XLSX-DATEIEN ----
+
+# In diesem Abschnitt werden sämtliche Hilfsfunktionen definiert, die für das
+# Laden und Speichern verschiedener Excel-Dateien (Settings, Queries, Quiz-Logs)
+# verantwortlich sind. Dadurch können wir an anderer Stelle diese Funktionen
+# einfach aufrufen, ohne den Code zu duplizieren.
+
+
+
+
+## 2.1) SETTINGS (INDEX, LOAD, SAVE) ----
 
 settings_index_path <- "settings_index.xlsx"
 
 loadSettingsIndex <- function(){
+  # Prüfen, ob die Datei 'settings_index.xlsx' existiert.
+  # Falls nicht, geben wir ein leeres DataFrame zurück.
   if(!file.exists(settings_index_path)){
     df <- data.frame(
       SettingName = character(),
@@ -88,6 +112,8 @@ loadSettingsIndex <- function(){
     )
     return(df)
   } else {
+    # Ansonsten laden wir das Excel und prüfen, ob die Spalten "SettingName",
+    # "FilePath" und "Archived" vorhanden sind. Wenn nicht, werden sie angelegt.
     df <- openxlsx::read.xlsx(settings_index_path, sheet = 1)
     needed <- c("SettingName", "FilePath", "Archived")
     for(nc in needed){
@@ -99,6 +125,9 @@ loadSettingsIndex <- function(){
 }
 
 saveSettingsIndex <- function(df){
+  # Speichert den DataFrame 'df' wieder in die Datei 'settings_index.xlsx'.
+  # Dabei achten wir darauf, dass die Spalten "SettingName", "FilePath" und
+  # "Archived" existieren.
   needed <- c("SettingName", "FilePath", "Archived")
   for(nc in needed){
     if(!nc %in% names(df)) df[[nc]] <- NA
@@ -111,6 +140,9 @@ saveSettingsIndex <- function(df){
 }
 
 loadSettingData <- function(settingName){
+  # Lädt die Daten zu einem konkreten Setting. Dafür schlagen wir im
+  # settings_index.xlsx nach, wo die Datei liegt (FilePath).
+  # Wenn kein aktives Setting oder archiviert => leeres DataFrame.
   si <- loadSettingsIndex()
   rowMatch <- si[si$SettingName == settingName & si$Archived == FALSE, ]
   if(nrow(rowMatch) == 0){
@@ -126,6 +158,7 @@ loadSettingData <- function(settingName){
   }
   path <- rowMatch$FilePath[1]
   if(!file.exists(path)){
+    # Falls Datei noch nicht existiert, leeres DF
     df <- data.frame(
       Zeitstempel   = character(),
       Sprache       = character(),
@@ -137,6 +170,7 @@ loadSettingData <- function(settingName){
     )
     return(df)
   } else {
+    # Datei existiert => laden und Spalten prüfen
     df <- openxlsx::read.xlsx(path, sheet = 1)
     needed <- c("Zeitstempel","Sprache","Original","Uebersetzung","Wortkategorie","Bemerkungen")
     for(nc in needed){
@@ -148,6 +182,7 @@ loadSettingData <- function(settingName){
 }
 
 saveSettingData <- function(df, settingName){
+  # Speichert die Daten eines konkreten Settings in dessen Excel-Datei.
   si <- loadSettingsIndex()
   rowMatch <- si[si$SettingName == settingName, ]
   if(nrow(rowMatch) == 0) return(NULL)
@@ -163,9 +198,14 @@ saveSettingData <- function(df, settingName){
   saveWorkbook(wb, path, overwrite = TRUE)
 }
 
+
+## 2.2) MY_QUERYS (ÜBERSETZUNGS-HISTORIE) ----
+
 path_queries <- "my_querys.xlsx"
 
 load_querys <- function(){
+  # Lädt die Datei my_querys.xlsx oder gibt ein leeres DataFrame zurück,
+  # falls sie noch nicht existiert.
   if(!file.exists(path_queries)){
     data.frame(
       Zeitstempel  = character(),
@@ -186,6 +226,7 @@ load_querys <- function(){
 }
 
 save_querys <- function(df){
+  # Speichert den DataFrame df in die Datei my_querys.xlsx
   needed <- c("Zeitstempel","Sprache","Original","Uebersetzung")
   for(nc in needed){
     if(!nc %in% names(df)) df[[nc]] <- NA_character_
@@ -197,10 +238,14 @@ save_querys <- function(df){
   saveWorkbook(wb, path_queries, overwrite = TRUE)
 }
 
+
+# 2.3) QUIZ-DATEN UND SESSION-HISTORY ----
+
 quiz_log_path        <- "my_quizlog.xlsx"
 session_history_path <- "my_session_history.xlsx"
 
 load_quiz_data <- function(){
+  # Lädt das Quiz-Log (alle bisherigen Quiz-Einträge).
   if(!file.exists(quiz_log_path)){
     data.frame(
       Zeitstempel         = character(),
@@ -227,6 +272,7 @@ load_quiz_data <- function(){
 }
 
 save_quiz_data <- function(df){
+  # Speichert den DataFrame df in das Quiz-Log (my_quizlog.xlsx)
   needed <- c("Zeitstempel","Abfragerichtung","Abfragewort",
               "RichtigeUebersetzung","MeineUebersetzung",
               "Ergebnis","Setting","SettingNiveau")
@@ -241,6 +287,7 @@ save_quiz_data <- function(df){
 }
 
 load_session_history <- function(){
+  # Lädt die Historie aller Quiz-Sessions (Start-/Endzeiten, Anzahl etc.).
   if(!file.exists(session_history_path)){
     data.frame(
       SessionID     = integer(),
@@ -271,6 +318,7 @@ load_session_history <- function(){
 }
 
 save_session_history <- function(df){
+  # Speichert den DataFrame df in die Datei my_session_history.xlsx
   needed <- c("SessionID","Startzeit","Endzeit","Dauer","Anzahl",
               "Richtig","Falsch","QuoteRichtig","QuoteFalsch","Setting",
               "DetailRichtig","DetailFalsch")
@@ -284,32 +332,39 @@ save_session_history <- function(df){
   saveWorkbook(wb, session_history_path, overwrite = TRUE)
 }
 
-############################################################################
-# 2) UI
-############################################################################
+
+# 3) SHINY-UI (OBERFLÄCHE) ----
+
+# In diesem Abschnitt wird das Layout (UI) unserer Shiny-App definiert.
+# Wir legen fest, wie die App strukturiert ist (linke Spalte mit Eingaben,
+# rechte Spalte mit Tabs usw.).
+
+
 
 ui <- fluidPage(
+  ## 3.1) Theme und Custom-CSS ----
   theme = shinytheme("flatly"),
   tags$head(tags$style(HTML(customCSS))),
   
-  # Titel
+  ## 3.2) Titelzeile ----
   titlePanel("Mein Übersetzer mit Settings & Quiz"),
   
-  # Layout: Linke Spalte für Settingwahl, Übersetzungseingabe & Navigation
+  ## 3.3) Haupt-Layout: Zwei Spalten (fluidRow): ----
+  #      Links => Settings-Wahl, Übersetzungs-Eingabe, Navigation
+  #      Rechts => Aktuelle Übersetzung + Tabs (Settings, Queries, Quiz etc.)
   fluidRow(
     column(
       width = 3,
+      ### 3.3.1) Wahl, ob vorhandenes Setting oder neues Setting
       wellPanel(
         radioButtons("settingChoice", "Was möchten Sie tun?",
                      choices = c("Vorhandenes Setting auswählen" = "existing",
                                  "Neues Setting erstellen" = "new"),
                      selected = "existing"),
-        # Wenn "existing" gewählt: Dropdown mit vorhandenen Settings
         conditionalPanel(
           condition = "input.settingChoice == 'existing'",
           uiOutput("settingsDropdownUI")
         ),
-        # Wenn "new" gewählt: Neues Setting anlegen
         conditionalPanel(
           condition = "input.settingChoice == 'new'",
           textInput("newSettingName", "Neues Setting anlegen (Name):", ""),
@@ -317,6 +372,7 @@ ui <- fluidPage(
         )
       ),
       
+      #### 3.3.2) Eingabe-Bereich für Übersetzungen (Eingabesprache, Text, Modus) ----
       wellPanel(
         h4("Einstellungen & Eingabe"),
         selectInput("lang_in", "Eingabesprache:",
@@ -338,6 +394,8 @@ ui <- fluidPage(
         br(), br(),
         actionButton("saveExcel", "Ergebnis speichern", class = "btn-success"),
         br(), br(),
+        
+        #### 3.3.3) Buchstaben-Filter für Übersetzungen ----
         strong("Buchstaben-Filter"),
         radioButtons("filterByCol", "Filter anwenden auf:",
                      choices = c("Original", "Uebersetzung"),
@@ -358,7 +416,7 @@ ui <- fluidPage(
         uiOutput("langFilterUI")
       ),
       
-      # Navigationstasten
+      #### 3.3.4) Navigationstasten ----
       div(
         id = "leftButtons",
         actionButton("btnGoTranslate", "Übersetzen", class="btn-info"),
@@ -367,16 +425,16 @@ ui <- fluidPage(
       )
     ),
     
-    # Rechte Spalte: Anzeige aktueller Übersetzung & Tabs
+    ## 3.4) Rechte Spalte: Anzeige der aktuellen Übersetzung + Tabs ----
     column(
       width = 9,
-      
       h4("Aktuelle Übersetzung im Speicher:"),
       DTOutput("tbl_current"),
       
       tabsetPanel(
         id = "subTabs",
-        # Tab 1: Anzeige des gewählten Settings
+        
+        #### 3.4.1) Tab 1: Anzeige gewähltes Setting ----
         tabPanel("Anzeige gewähltes Setting",
                  fluidRow(
                    column(6, actionButton("delRows", "Zeile löschen (Setting)", class = "btn-warning")),
@@ -384,7 +442,8 @@ ui <- fluidPage(
                  ),
                  DTOutput("mainDT")
         ),
-        # Tab 2: Alle bisherigen Übersetzungen (my_querys)
+        
+        #### 3.4.2) Tab 2: Alle bisherigen Übersetzungen ----
         tabPanel("Alle bisherigen Übersetzungen",
                  fluidRow(
                    column(6, actionButton("delQueries", "Zeile löschen (Queries)", class = "btn-warning")),
@@ -401,7 +460,8 @@ ui <- fluidPage(
                  h4("Gefundene Duplikate (Original == Übersetzung):"),
                  DTOutput("myQueriesDuplicates")
         ),
-        # Tab 3: Quiz – hier sind neben der aktiven Session auch der Quiz-Log und eine grafische Statistik integriert
+        
+        #### 3.4.3) Tab 3: Quiz ----
         tabPanel("Quiz",
                  br(),
                  strong("Aktuell gewählte Abfragerichtung (Filter):"),
@@ -442,7 +502,8 @@ ui <- fluidPage(
                  h4("Grafische Statistik"),
                  plotOutput("quizPlot", height = "400px")
         ),
-        # Tab 4: Settings verwalten (Archivieren/Löschen)
+        
+        #### 3.4.4) Tab 4: Settings verwalten ----
         tabPanel("Settings verwalten",
                  br(),
                  fluidRow(
@@ -457,13 +518,21 @@ ui <- fluidPage(
   )
 )
 
-############################################################################
-# 3) SERVER
-############################################################################
+
+# 4) SERVER-BEREICH ----
+
+# Hier implementieren wir die eigentliche Logik der App:
+# - Laden/Speichern von Settings
+# - Übersetzungs-API-Aufrufe
+# - Filtern von Tabellen
+# - Quiz-Funktionalität (Start/Ende einer Session, Logging)
+# - Einstellungen verwalten (Archivieren, Löschen)
 
 server <- function(input, output, session){
   
-  # Navigation: Schalte zu den entsprechenden Tabs
+
+  ## 4.1) Navigation per Buttons ----
+
   observeEvent(input$btnGoTranslate, {
     updateTabsetPanel(session, "subTabs", selected = "Anzeige gewähltes Setting")
   })
@@ -474,20 +543,24 @@ server <- function(input, output, session){
     updateTabsetPanel(session, "subTabs", selected = "Settings verwalten")
   })
   
-  # REACTIVE VALUES
-  settingsIndexRV  <- reactiveVal(loadSettingsIndex())
-  currentData      <- reactiveVal(data.frame())
-  storedData       <- reactiveVal(data.frame())
-  queryDataRV      <- reactiveVal(load_querys())
-  myQueriesDuplicatesRV <- reactiveVal(data.frame())
-  quizLogRV        <- reactiveVal(load_quiz_data())
-  sessionHistRV    <- reactiveVal(load_session_history())
-  quizSessionRV    <- reactiveVal(data.frame())
-  quizWordRV       <- reactiveVal(NULL)
-  quizSessionStart <- reactiveVal(NULL)
-  quizStageRV      <- reactiveVal(FALSE)
+
+  ## 4.2) REACTIVE VALUES (Speicher für dynamische Daten) ----
+
+  settingsIndexRV  <- reactiveVal(loadSettingsIndex())   # Liste aller Settings
+  currentData      <- reactiveVal(data.frame())          # Letzte Übersetzung
+  storedData       <- reactiveVal(data.frame())          # Daten des akt. Settings
+  queryDataRV      <- reactiveVal(load_querys())         # Alle Übersetzungen (my_querys)
+  myQueriesDuplicatesRV <- reactiveVal(data.frame())     # Duplikate in my_querys
+  quizLogRV        <- reactiveVal(load_quiz_data())      # Komplettes Quiz-Log
+  sessionHistRV    <- reactiveVal(load_session_history())# Historie der Quiz-Sessions
+  quizSessionRV    <- reactiveVal(data.frame())          # Aktuelle Quiz-Session
+  quizWordRV       <- reactiveVal(NULL)                  # Aktuelles Quiz-Wort
+  quizSessionStart <- reactiveVal(NULL)                  # Startzeit der Quiz-Session
+  quizStageRV      <- reactiveVal(FALSE)                 # Hilfsflag
   
-  # UI: Settings Dropdown
+
+  ## 4.3) SETTINGS DROPDOWN UND LADEN DES AKTUELLEN SETTINGS ----
+
   output$settingsDropdownUI <- renderUI({
     si <- settingsIndexRV()
     si_active <- si[si$Archived == FALSE, ]
@@ -500,17 +573,19 @@ server <- function(input, output, session){
     }
   })
   
-  # Bei Änderung des ausgewählten Settings laden
   observeEvent(list(settingsIndexRV(), input$which_setting), {
     req(input$which_setting)
     df <- loadSettingData(input$which_setting)
     storedData(df)
+    # Falls Quizsession läuft => nächstes Wort ziehen
     if(!is.null(quizSessionStart())){
       getNextWord()
     }
   }, ignoreNULL = TRUE)
   
-  # Neues Setting erstellen
+
+  ## 4.4) NEUES SETTING ERSTELLEN ----
+
   observeEvent(input$createSettingBtn, {
     newName <- trimws(input$newSettingName)
     if(nchar(newName) == 0){
@@ -548,14 +623,17 @@ server <- function(input, output, session){
     updateRadioButtons(session, "settingChoice", selected = "existing")
   })
   
-  # Übersetzung: Aktuelle Übersetzungen generieren und speichern in my_querys
+
+  ## 4.5) ÜBERSETZUNGS-FUNKTION (GOOGLE TRANSLATE) UND SPEICHERN IN my_querys ----
+
   output$tbl_current <- renderDT({
     df <- currentData()
     if(nrow(df) == 0){
-      return(datatable(data.frame(`(Keine Daten)` = "Keine aktuelle Übersetzung"), options = list(dom = 't')))
+      return(datatable(data.frame(`(Keine Daten)` = "Keine aktuelle Übersetzung"), 
+                       options = list(dom = 't')))
     } else {
       datatable(df, extensions = c("Buttons"),
-                options = list(autoWidth = TRUE, dom = "Bfrtip", 
+                options = list(autoWidth = TRUE, dom = "Bfrtip",
                                buttons = c("copy", "csv", "excel", "pdf", "print")))
     }
   })
@@ -579,6 +657,8 @@ server <- function(input, output, session){
     base_url <- paste0("https://translation.googleapis.com/language/translate/v2?key=", API_KEY)
     mode <- input$translate_mode
     bigList <- list()
+    
+    # Unterscheidung: pro Zeile oder ganze Blöcke
     if(mode=="linewise"){
       for(ln in lines_in){
         for(tlang in tg){
@@ -593,6 +673,7 @@ server <- function(input, output, session){
             return(NULL)
           }
           trText <- js$data$translations$translatedText[1]
+          
           rowdf <- data.frame(
             Zeitstempel   = format(Sys.time(), "%d.%m.%Y_%H.%M.%S"),
             Sprache       = paste0(src, " - ", tlang),
@@ -606,6 +687,7 @@ server <- function(input, output, session){
         }
       }
     } else {
+      # block-Modus
       block_txt <- paste(lines_in, collapse = "\n")
       for(tlang in tg){
         resp <- httr::POST(url = base_url,
@@ -619,6 +701,7 @@ server <- function(input, output, session){
           return(NULL)
         }
         trText <- js$data$translations$translatedText[1]
+        
         rowdf <- data.frame(
           Zeitstempel   = format(Sys.time(), "%d.%m.%Y_%H.%M.%S"),
           Sprache       = paste0(src, " - ", tlang),
@@ -631,33 +714,46 @@ server <- function(input, output, session){
         bigList[[length(bigList) + 1]] <- rowdf
       }
     }
+    
+    # Zusammenführen aller Zeilen
     df_out <- do.call(rbind, bigList)
-    # Überspringe Zeilen, in denen Original und Übersetzung identisch sind
+    
+    # Zeilen entfernen, in denen Original == Übersetzung
     dup_self <- tolower(trimws(df_out$Original)) == tolower(trimws(df_out$Uebersetzung))
     if(any(dup_self)){
       showNotification(paste(sum(dup_self), "Zeile(n) identisch => ignoriert."), type = "warning")
       df_out <- df_out[!dup_self, ]
     }
-    # In my_querys speichern, falls noch nicht vorhanden
+    
+    # Speichern in my_querys, wenn nicht bereits vorhanden
     if(nrow(df_out) > 0){
       oldQ <- queryDataRV()
       combo_old <- paste(tolower(oldQ$Sprache), tolower(oldQ$Original), tolower(oldQ$Uebersetzung))
       combo_new <- paste(tolower(df_out$Sprache), tolower(df_out$Original), tolower(df_out$Uebersetzung))
       isdup_q   <- combo_new %in% combo_old
       if(any(isdup_q)){
-        showNotification(paste(sum(isdup_q), "Zeile(n) bereits in my_querys => nicht erneut gespeichert."), type = "warning")
+        showNotification(paste(sum(isdup_q), 
+                               "Zeile(n) bereits in my_querys => nicht erneut gespeichert."),
+                         type = "warning")
       }
       df_qnew <- df_out[!isdup_q, c("Zeitstempel","Sprache","Original","Uebersetzung")]
       if(nrow(df_qnew) > 0){
         appendedQ <- rbind(oldQ, df_qnew)
         save_querys(appendedQ)
         queryDataRV(appendedQ)
-        showNotification(paste(nrow(df_qnew), "Zeilen neu in my_querys.xlsx gespeichert."), type = "message")
+        showNotification(paste(nrow(df_qnew), 
+                               "Zeilen neu in my_querys.xlsx gespeichert."),
+                         type = "message")
       }
     }
+    
+    # currentData updaten => Anzeige "Aktuelle Übersetzung im Speicher"
     currentData(df_out)
   })
   
+
+  ## 4.6) ERGEBNISSE INS AKTIVE SETTING SPEICHERN ----
+
   observeEvent(input$saveExcel, {
     req(input$which_setting)
     df_tr <- currentData()
@@ -681,10 +777,14 @@ server <- function(input, output, session){
     saveSettingData(appended, input$which_setting)
     storedData(appended)
     showNotification(paste(nrow(df_new), "Zeilen appended & gespeichert!"), type = "message")
+    
+    # currentData leeren
     currentData(data.frame())
   })
   
-  # my_querys – Anzeige, Zeilen löschen, Duplikate anzeigen/entfernen
+
+  ## 4.7) ALLE BISHERIGEN ÜBERSETZUNGEN (my_querys) ----
+
   output$myQueriesDT <- renderDT({
     datatable(queryDataRV(), selection = "single", extensions = c("Buttons"),
               options = list(pageLength = 5, autoWidth = TRUE, dom = "Bfrtip",
@@ -704,6 +804,7 @@ server <- function(input, output, session){
     showNotification(paste(length(sel), "Zeile(n) aus my_querys gelöscht!"), type = "message")
   })
   
+  ### 4.7.1 Duplikate ----
   output$myQueriesDuplicates <- renderDT({
     datatable(myQueriesDuplicatesRV(), selection = "single", extensions = c("Buttons"),
               options = list(pageLength = 5, autoWidth = TRUE, dom = "Bfrtip",
@@ -745,7 +846,9 @@ server <- function(input, output, session){
     myQueriesDuplicatesRV(data.frame())
   })
   
-  # Buchstaben-Filter
+
+  ## 4.8) BUCHSTABEN-FILTER UND SPRACH-FILTER (FÜR DAS ACTIVE SETTING) ----
+
   observeEvent(c(input$letters_row1, input$letters_row2, input$letters_row3, input$letters_row4), {
     sumLetters <- length(input$letters_row1) + length(input$letters_row2) +
       length(input$letters_row3) + length(input$letters_row4)
@@ -762,7 +865,6 @@ server <- function(input, output, session){
     }
   })
   
-  # Haupt-Tabelle (gewähltes Setting) mit Sprach- und Buchstabenfilter
   output$langFilterUI <- renderUI({
     df_line <- storedData()
     if(nrow(df_line) == 0){
@@ -841,7 +943,9 @@ server <- function(input, output, session){
     showNotification(paste(length(sel), "Zeile(n) gelöscht!"), type = "message")
   })
   
-  # Quiz-Funktionalität
+
+  ## 4.9) QUIZ-FUNKTIONALITÄT ----
+
   getNextWord <- function(){
     df <- isolate(getFilteredData())
     if(nrow(df)==0){
@@ -857,7 +961,7 @@ server <- function(input, output, session){
     quizSessionRV(data.frame())
     quizWordRV(NULL)
     quizSessionStart(Sys.time())
-    showNotification("Abfragesession gestartet!", type = "message")
+    showNotification("Abfrasesession gestartet!", type = "message")
     getNextWord()
   })
   
@@ -1017,7 +1121,7 @@ server <- function(input, output, session){
       save_session_history(newHist)
     }
     quizSessionStart(NULL)
-    showNotification("Abfragesession beendet!", type = "message")
+    showNotification("Abfrasesession beendet!", type = "message")
   })
   
   output$sessionHistDT <- renderDT({
@@ -1039,7 +1143,9 @@ server <- function(input, output, session){
     showNotification(paste(length(sel), "Zeile(n) aus Session-Historie gelöscht!"), type="message")
   })
   
-  # Quiz-Log in das Quiz-Register integrieren
+
+  ## 4.10) QUIZ-LOG (IM SELBEN TAB) ----
+
   observeEvent(input$reloadQuizLog, {
     df <- load_quiz_data()
     quizLogRV(df)
@@ -1090,7 +1196,9 @@ server <- function(input, output, session){
       theme_minimal()
   })
   
-  # Settings verwalten: Anzeige der Settings-Übersicht und Buttons zum Archivieren/Löschen
+
+  ## 4.11) SETTINGS VERWALTEN (ARCHIVIEREN / LÖSCHEN) ----
+
   output$settingsIndexDT <- renderDT({
     datatable(settingsIndexRV(), selection = "single", extensions = c("Buttons"),
               options = list(pageLength = 5, autoWidth = TRUE, dom = "Bfrtip",
@@ -1153,8 +1261,12 @@ server <- function(input, output, session){
   
 }
 
-############################################################################
-# 4) APP STARTEN
-############################################################################
+
+# 5) APP STARTEN ----
+
+# Mit dem folgenden Aufruf wird die App schließlich gestartet. Wenn man
+# diesen Code in einer R-Umgebung ausführt, öffnet sich ein Shiny-Fenster,
+# in dem alle oben definierten Funktionen, UI-Elemente und Abläufe
+# verfügbar sind.
 
 shinyApp(ui, server)
